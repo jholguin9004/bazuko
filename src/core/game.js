@@ -27,6 +27,8 @@ import { InteractionSystem } from '../systems/InteractionSystem.js';
 import { DiseaseSystem } from '../systems/DiseaseSystem.js';
 import { TalentSystem } from '../systems/TalentSystem.js';
 import { CraftingSystem } from '../systems/CraftingSystem.js';
+import { ZorraSystem } from '../systems/ZorraSystem.js';
+import { ZorraController } from '../systems/ZorraController.js';
 
 import { HUD } from '../ui/HUD.js';
 import { PerformanceHUD } from '../ui/PerformanceHUD.js';
@@ -76,6 +78,9 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       this.player, this.inventory, this.stats, this.audio,
       this.diseases, this.talents, this.crafting
     );
+    this.zorra = new ZorraSystem();
+    this.interaction.zorra = this.zorra;
+    this.zorraCtl = new ZorraController(this);
 
     // HUD, menús y creador de personaje
     this.hud = new HUD();
@@ -378,6 +383,8 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       new THREE.Vector3(2.4, 2, 1.5),
       new THREE.Vector3(0, 1, -0.7)
     );
+
+    this.zorraCtl?.spawn(district);
   }
 
   _loadIfSave() {
@@ -398,6 +405,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       this.built = data.built ?? {};
       this.costal = !!data.costal;
       this.cambuche?.setBuilt(this.built);
+      this.zorra.deserialize(data.zorra);
       if (data.look) this._applyLook(data.look);
     }
   }
@@ -413,7 +421,8 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       worldLayoutVersion: this.world.active?.layoutVersion ?? 0,
       look: this.look,
       built: this.built,
-      costal: this.costal
+      costal: this.costal,
+      zorra: this.zorra.serialize()
     });
   }
 
@@ -505,6 +514,16 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     return true;
   }
 
+  /** Capacidad de carga sin contar la zorra */
+  _capacidadSinZorra() {
+    return INVENTORY_MAX_WEIGHT + this.talents.getEffect('maxWeightBonus', 0) + (this.costal ? COSTAL_BONUS : 0);
+  }
+
+  _actualizarCapacidad() {
+    this.inventory.maxWeight = this._capacidadSinZorra() + (this.zorra?.bonoPeso() ?? 0);
+    this.player.load = this.inventory.totalWeight / this.inventory.maxWeight;
+  }
+
   _respawn() {
     if (!this._deathPending) return;
     const half = Math.floor(this.inventory.items.length / 2);
@@ -512,6 +531,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       const it = this.inventory.items[0];
       if (it) this.inventory.remove(it.id, it.qty);
     }
+    this.zorraCtl?.alMorir();
 
     // Recuperar todas las necesidades evita seguir recibiendo daño al reaparecer.
     for (const need of NEEDS) this.stats[need] = Math.max(60, this.stats[need]);
@@ -568,15 +588,14 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     // Actualiza el rumbo antes de calcular WASD en relación con la cámara.
     this.cameraRig.prepareMovement();
     this.player.update(dt, this.cameraRig.camera, this.collisions);
+    this.zorraCtl.update(dt, this.input);
 
     // 4. Stats
     this.stats.update(dt, this.player, this.diseases, this.clock, this.talents);
     if (this._handleDeath()) return;
 
     // 4b. Aplicar bono de peso por talentos
-    const maxWeightBonus = this.talents.getEffect('maxWeightBonus', 0);
-    this.inventory.maxWeight = INVENTORY_MAX_WEIGHT + maxWeightBonus + (this.costal ? COSTAL_BONUS : 0);
-    this.player.load = this.inventory.totalWeight / this.inventory.maxWeight;
+    this._actualizarCapacidad();
 
     // 5. Debuff por salud mental baja (el desgaste se calcula en StatsSystem).
     if (this.stats.saludMental < MENTAL_LOW_THRESHOLD) {
@@ -606,7 +625,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
 
     // 10. Audio
     const moving = this.input.axis.x !== 0 || this.input.axis.z !== 0;
-    this.audio.updateSteps(moving, this.input.isRunning);
+    this.audio.updateSteps(moving && this.player.zorraMult > 0, this.input.isRunning && this.player.canRun);
     this.audio.updateBoost(this.interaction.boostActive);
 
     // 12. Render
