@@ -26,6 +26,7 @@ export class ZorraController {
     this.forcejeo = null;     // estado del forcejeo en curso (ver Forcejeo.js)
     this.rival = null;        // Reciclador contra el que se forcejea
     this.barra = null;        // ForcejeoBar, creada en el primer forcejeo
+    this._posSuelo = new THREE.Vector3(); // reutilizado cada frame para la zorra soltada
   }
 
   spawn(district) {
@@ -160,6 +161,8 @@ export class ZorraController {
     const zorra = game.zorra;
     const vista = this.zorraJugador;
 
+    game._actualizarCapacidad(); // el paso 4b del juego corre después: evita un frame con capacidad vieja
+
     if (this.forcejeo) this._actualizarForcejeo(dt, input);
 
     if (!this.forcejeo && zorra.empujando && input.consumePress(ZORRA.teclas.soltar)) {
@@ -171,7 +174,7 @@ export class ZorraController {
         vista.colocarDelante(game.player.position, game.player.root.rotation.y);
         vista.visible = true;
       } else if (zorra.estado === 'dropped') {
-        vista.colocarDelante(new THREE.Vector3(...zorra.pos), zorra.rot);
+        vista.colocarDelante(this._posSuelo.set(...zorra.pos), zorra.rot);
         vista.visible = true;
       } else {
         vista.visible = false;
@@ -191,17 +194,19 @@ export class ZorraController {
     }
   }
 
-  /** Al desmayarse empujando, se pierde lo que no cabe sin la zorra. */
+  /**
+   * Al desmayarse se pierde lo que no cabe sin la zorra. Con la zorra en el suelo
+   * (o sin ella) el recorte es silencioso, para no dejar al jugador inmovilizado.
+   */
   alMorir() {
     const { game } = this;
     if (this.forcejeo) {
       this.rival?.estado.cancelarForcejeo();
       this._cerrarForcejeo();
     }
-    if (!game.zorra.empujando) return;
     const quitar = objetosADescartar(game.inventory.items, game._capacidadSinZorra());
     for (const [id, qty] of quitar) game.inventory.remove(id, qty);
-    toast(TEXTOS_ZORRA.muerte);
+    if (game.zorra.empujando) toast(TEXTOS_ZORRA.muerte);
   }
 
   dispose() {

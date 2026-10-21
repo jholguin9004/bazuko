@@ -62,6 +62,34 @@ test('al morir con la zorra en el suelo no se descarta nada extra', () => {
   assert.equal(game.zorra.estado, 'dropped');
 });
 
+test('al morir con la zorra en el suelo se recorta en silencio hasta la capacidad sin zorra', () => {
+  const game = juego({ costal: false });
+  game.zorra.obtener(); game.zorra.soltar([1, 0, 1], 0);
+  game.inventory.items = [{ id: 'chatarra', name: 'Chatarra', weight: 1, value: 900, qty: 50 }];
+  let toast = null;
+  window.addEventListener('toast', (e) => { toast = e.detail.text; });
+  Object.assign(Object.create(ZorraController.prototype), { game }).alMorir();
+  assert.equal(game.inventory.totalWeight, 20);
+  assert.equal(game.zorra.estado, 'dropped');
+  assert.equal(toast, null);
+});
+
+test('update recalcula la capacidad antes de medir el sobrepeso', () => {
+  const game = Object.assign(juego(), { player: { position: new THREE.Vector3(), root: new THREE.Group(), zorraMult: 1, canRun: true, load: 0 } });
+  game.zorra.obtener();
+  game.inventory.items = [{ id: 'chatarra', name: 'Chatarra', weight: 1, value: 900, qty: 50 }];
+  game.inventory.maxWeight = 20; // valor viejo
+  let toast = null;
+  window.addEventListener('toast', (e) => { toast = e.detail.text; });
+  const ctl = Object.assign(Object.create(ZorraController.prototype), {
+    game, forcejeo: null, zorraJugador: null, _avisoSobrepeso: 0
+  });
+  ctl.update(0.016, { axis: { x: 0, z: 0 }, consumePress: () => false });
+  assert.equal(game.inventory.maxWeight, 60);
+  assert.equal(game.player.zorraMult, 0.7);
+  assert.equal(toast, null);
+});
+
 // ---------- forcejeo ----------
 
 function entradaConE() {
