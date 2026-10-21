@@ -5,8 +5,14 @@
 import * as THREE from 'three';
 import { Zorra } from '../entities/Zorra.js';
 import { Reciclador } from '../entities/Reciclador.js';
-import { ZORRA, RECICLADORES, TEXTOS_ZORRA } from '../data/zorra.js';
+import { ZORRA, RECICLADORES, FORCEJEO, TEXTOS_ZORRA, INSULTOS_RECICLADOR } from '../data/zorra.js';
+import { ITEMS } from '../data/items.js';
+import { originEffect } from '../data/origins.js';
 import { movimientoJugador, haySobrepeso, objetosADescartar } from './ZorraSystem.js';
+import {
+  fuerzaJugador, crearForcejeo, pulsarForcejeo, avanzarForcejeo, cancelarForcejeo, botinForcejeo
+} from './Forcejeo.js';
+import { ForcejeoBar } from '../ui/ForcejeoBar.js';
 
 const toast = (text, type = 'info') =>
   window.dispatchEvent(new CustomEvent('toast', { detail: { text, type } }));
@@ -17,6 +23,9 @@ export class ZorraController {
     this.zorraJugador = null;
     this.recicladores = [];
     this._avisoSobrepeso = 0; // s restantes para el próximo aviso
+    this.forcejeo = null;     // estado del forcejeo en curso (ver Forcejeo.js)
+    this.rival = null;        // Reciclador contra el que se forcejea
+    this.barra = null;        // ForcejeoBar, creada en el primer forcejeo
   }
 
   spawn(district) {
@@ -81,15 +90,79 @@ export class ZorraController {
     this.recicladores = [];
   }
 
-  /** El jugador quiere forcejear con `reciclador`; ya se comprobó `estado.puedeForcejear`. La tarea 10 lo implementa. */
-  alForcejear(_reciclador) {}
+  /** El jugador quiere forcejear con `reciclador`; ya se comprobó `estado.puedeForcejear`. */
+  alForcejear(reciclador) { this.iniciarForcejeo(reciclador); }
+
+  iniciarForcejeo(reciclador) {
+    if (this.forcejeo) return;
+    const { game } = this;
+    const fuerza = fuerzaJugador({
+      energia: game.stats.energia,
+      enAbstinencia: game.stats.inWithdrawal,
+      origenMult: originEffect(game.look?.origen, 'forcejeoBonus', 1)
+    });
+    this.forcejeo = crearForcejeo(fuerza);
+    this.rival = reciclador;
+    reciclador.estado.iniciarForcejeo();
+    this.barra ??= new ForcejeoBar();
+    this.barra.mostrar(this.forcejeo.barra);
+  }
+
+  _actualizarForcejeo(dt, input) {
+    const f = this.forcejeo;
+    // Se consumen todas las E para que InteractionSystem no las vea mientras dura
+    if (input.consumePress(ZORRA.teclas.forcejear)) pulsarForcejeo(f);
+    if (input.consumePress(ZORRA.teclas.cancelar)) cancelarForcejeo(f);
+    avanzarForcejeo(f, dt);
+    if (f.resultado === 'victoria') this._ganarForcejeo();
+    else if (f.resultado === 'derrota') this._perderForcejeo();
+    else this.barra.mostrar(f.barra);
+  }
+
+  _cerrarForcejeo() {
+    this.forcejeo = null;
+    this.rival = null;
+    this.barra?.ocultar();
+  }
+
+  _ganarForcejeo() {
+    const { game, rival } = this;
+    game.zorra.obtener();
+    rival.estado.jugadorGana();
+    const z = rival.zorra;
+    if (z) {
+      z.dispose();
+      rival.zorra = null;
+      rival.alCambiarZorra?.(z, null);
+    }
+    game._actualizarCapacidad(); // antes de repartir: la capacidad ya incluye la zorra
+    const nombres = [];
+    for (const id of botinForcejeo()) {
+      const item = ITEMS[id];
+      if (item && game.inventory.add(item)) nombres.push(item.name);
+    }
+    toast(nombres.length ? `${TEXTOS_ZORRA.ganaste}: ${nombres.join(', ')}` : TEXTOS_ZORRA.ganaste, 'info');
+    this._cerrarForcejeo();
+  }
+
+  _perderForcejeo() {
+    const { game, rival } = this;
+    game.stats.salud = Math.max(0, game.stats.salud - FORCEJEO.castigoSalud);
+    game.stats.animo = Math.max(0, game.stats.animo - FORCEJEO.castigoAnimo);
+    rival.estado.jugadorPierde();
+    const i = Math.floor(Math.random() * INSULTOS_RECICLADOR.length);
+    toast(INSULTOS_RECICLADOR[Math.min(i, INSULTOS_RECICLADOR.length - 1)], 'warn');
+    this._cerrarForcejeo();
+  }
 
   update(dt, input) {
     const { game } = this;
     const zorra = game.zorra;
     const vista = this.zorraJugador;
 
-    if (zorra.empujando && input.consumePress(ZORRA.teclas.soltar)) {
+    if (this.forcejeo) this._actualizarForcejeo(dt, input);
+
+    if (!this.forcejeo && zorra.empujando && input.consumePress(ZORRA.teclas.soltar)) {
       if (zorra.soltar(game.player.position.toArray(), game.player.root.rotation.y)) toast(TEXTOS_ZORRA.soltada);
     }
 
@@ -106,7 +179,7 @@ export class ZorraController {
     }
 
     const sobrepeso = haySobrepeso(game.inventory.totalWeight, game.inventory.maxWeight);
-    const { mult, puedeCorrer } = movimientoJugador({ empujando: zorra.empujando, sobrepeso });
+    const { mult, puedeCorrer } = movimientoJugador({ empujando: zorra.empujando, sobrepeso, forcejeando: !!this.forcejeo });
     game.player.zorraMult = mult;
     game.player.canRun = puedeCorrer;
 
@@ -121,6 +194,10 @@ export class ZorraController {
   /** Al desmayarse empujando, se pierde lo que no cabe sin la zorra. */
   alMorir() {
     const { game } = this;
+    if (this.forcejeo) {
+      this.rival?.estado.cancelarForcejeo();
+      this._cerrarForcejeo();
+    }
     if (!game.zorra.empujando) return;
     const quitar = objetosADescartar(game.inventory.items, game._capacidadSinZorra());
     for (const [id, qty] of quitar) game.inventory.remove(id, qty);
