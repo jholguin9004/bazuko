@@ -21,7 +21,8 @@ export class RecicladorEstado {
   get enojado() { return this.espera > 0; }
 
   llegarACaneca() {
-    if (this.random() < RECICLADORES.probDescuido) {
+    // Sin zorra no hay nada que descuidar: siempre es una parada normal
+    if (this.tieneZorra && this.random() < RECICLADORES.probDescuido) {
       this.fase = 'descuidando';
       this.zorraDescuidada = true;
       this.faseRestante = RECICLADORES.duracionDescuido;

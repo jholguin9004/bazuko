@@ -147,3 +147,11 @@ test('tras perder un forcejeo no acepta otro durante 2 minutos', () => {
   r.avanzar(1);
   assert.equal(r.puedeForcejear, true);
 });
+
+test('sin zorra, la parada en la caneca nunca es un descuido', () => {
+  const r = new RecicladorEstado(() => 0.01);
+  r.tieneZorra = false;
+  assert.equal(r.llegarACaneca(), 'rebuscar');
+  assert.equal(r.zorraDescuidada, false);
+  assert.equal(r.fase, 'parada');
+});

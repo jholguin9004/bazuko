@@ -64,3 +64,20 @@ test('si el jugador ya tiene zorra no puede robarla ni forcejear', () => {
   assert.equal(forcejeos, 0);
   assert.equal(r.prompt, 'Ya tienes zorra');
 });
+
+test('tras el robo, el reciclador sin zorra visita bolsas sin descuidar ni insultar', () => {
+  const toasts = [];
+  window.addEventListener('toast', (e) => toasts.push(e.detail.text));
+  const r = reciclador({ random: () => 0.01 });
+  r._llegarACaneca();
+  r.zorra.interactuar();
+  r.estado.avanzar(RECICLADORES.duracionDescuido);
+  r._volverAZorra();
+  toasts.length = 0;
+  r._llegarACaneca();
+  assert.equal(r.estado.zorraDescuidada, false);
+  for (let t = 0; t < RECICLADORES.duracionDescuido + 1; t += 0.1) r._walk(0.1);
+  assert.deepEqual(toasts, []);
+  assert.equal(r.zorra, null);
+  assert.equal(r.interactable, false);
+});

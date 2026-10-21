@@ -196,13 +196,10 @@ export class Reciclador extends Npc {
     this.objetivoCaneca = null;
     this._limpiarRuta();
     this.moving = false;
-    if (this.estado.llegarACaneca() !== 'descuidar') return;
-    if (this.zorra) {
-      this.zorra.dejarEnEscena();
-      this._anclaZorra.copy(this.zorra.anchor);
-    } else {
-      this._anclaZorra.copy(this.position);
-    }
+    // `llegarACaneca` solo descuida si tiene zorra, y `_walk` la recrea en cuanto la recupera
+    if (this.estado.llegarACaneca() !== 'descuidar' || !this.zorra) return;
+    this.zorra.dejarEnEscena();
+    this._anclaZorra.copy(this.zorra.anchor);
     const a = this.random() * Math.PI * 2;
     const d = RECICLADORES.distanciaDescuido;
     const meta = this.navigation?.nearestPoint(this.position.x + Math.cos(a) * d, this.position.z + Math.sin(a) * d);
