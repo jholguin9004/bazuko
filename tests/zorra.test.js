@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { originEffect } from '../src/data/origins.js';
 import { ZORRA, FORCEJEO } from '../src/data/zorra.js';
 import { ZorraSystem, movimientoJugador, haySobrepeso, precioZorra, ofertaZorra, objetosADescartar } from '../src/systems/ZorraSystem.js';
+import { fuerzaJugador, crearForcejeo, pulsarForcejeo, avanzarForcejeo, cancelarForcejeo, botinForcejeo } from '../src/systems/Forcejeo.js';
 
 test('el origen reciclador abarata la zorra y da fuerza en el forcejeo', () => {
   assert.equal(originEffect('reciclador', 'zorraDiscount'), 0.75);
@@ -71,4 +72,47 @@ test('el guardado conserva la zorra y las partidas antiguas cargan sin zorra', (
   const sinPos = new ZorraSystem();
   sinPos.deserialize({ state: 'dropped', pos: null });
   assert.equal(sinPos.estado, 'pushing');
+});
+
+const simular = (porSegundo, fuerza = 1) => {
+  const f = crearForcejeo(fuerza);
+  const dt = 1 / 60;
+  let acumulado = 0;
+  while (!f.resultado) {
+    acumulado += porSegundo * dt;
+    while (acumulado >= 1) { pulsarForcejeo(f); acumulado -= 1; }
+    avanzarForcejeo(f, dt);
+  }
+  return f;
+};
+
+test('un jugador descansado gana a 4-5 pulsaciones por segundo y pierde a 3 por tiempo', () => {
+  assert.equal(simular(4.5).resultado, 'victoria');
+  const lento = simular(3);
+  assert.equal(lento.resultado, 'derrota');
+  assert.ok(lento.tiempo >= 6 - 1e-9);
+});
+
+test('sin pulsar, la barra llega a 0 antes de los 6 s', () => {
+  const f = simular(0);
+  assert.equal(f.resultado, 'derrota');
+  assert.equal(f.barra, 0);
+  assert.ok(f.tiempo < 6);
+});
+
+test('la fuerza baja con cansancio y abstinencia y sube con el origen', () => {
+  assert.equal(fuerzaJugador({ energia: 80, enAbstinencia: false }), 1);
+  assert.equal(fuerzaJugador({ energia: 29, enAbstinencia: false }), 0.6);
+  assert.equal(fuerzaJugador({ energia: 80, enAbstinencia: true }), 0.5);
+  assert.ok(Math.abs(fuerzaJugador({ energia: 10, enAbstinencia: true, origenMult: 1.2 }) - 0.36) < 1e-9);
+  assert.equal(simular(4.5, 0.6).resultado, 'derrota');
+});
+
+test('rendirse cuenta como derrota y el botín trae de 2 a 4 materiales', () => {
+  const f = crearForcejeo(1);
+  cancelarForcejeo(f);
+  assert.equal(f.resultado, 'derrota');
+  assert.equal(botinForcejeo(() => 0).length, 2);
+  assert.equal(botinForcejeo(() => 0.999).length, 4);
+  for (const id of botinForcejeo()) assert.ok(['lata', 'botella', 'carton', 'chatarra'].includes(id));
 });
