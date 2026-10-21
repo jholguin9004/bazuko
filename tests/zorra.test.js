@@ -4,6 +4,7 @@ import { originEffect } from '../src/data/origins.js';
 import { ZORRA, FORCEJEO } from '../src/data/zorra.js';
 import { ZorraSystem, movimientoJugador, haySobrepeso, precioZorra, ofertaZorra, objetosADescartar } from '../src/systems/ZorraSystem.js';
 import { fuerzaJugador, crearForcejeo, pulsarForcejeo, avanzarForcejeo, cancelarForcejeo, botinForcejeo } from '../src/systems/Forcejeo.js';
+import { RecicladorEstado } from '../src/systems/RecicladorEstado.js';
 
 test('el origen reciclador abarata la zorra y da fuerza en el forcejeo', () => {
   assert.equal(originEffect('reciclador', 'zorraDiscount'), 0.75);
@@ -115,4 +116,34 @@ test('rendirse cuenta como derrota y el botín trae de 2 a 4 materiales', () => 
   assert.equal(botinForcejeo(() => 0).length, 2);
   assert.equal(botinForcejeo(() => 0.999).length, 4);
   for (const id of botinForcejeo()) assert.ok(['lata', 'botella', 'carton', 'chatarra'].includes(id));
+});
+
+test('en el 10 % de las paradas deja la zorra 8 s y al volver nota el robo', () => {
+  const r = new RecicladorEstado(() => 0.05);
+  assert.equal(r.llegarACaneca(), 'descuidar');
+  assert.equal(r.puedeForcejear, false);
+  assert.equal(r.avanzar(7.9), null);
+  assert.equal(r.robarZorra(), true);
+  assert.equal(r.avanzar(0.2), 'regresar');
+  assert.equal(r.recogerZorra(), false);
+  assert.equal(new RecicladorEstado(() => 0.5).llegarACaneca(), 'rebuscar');
+});
+
+test('sin zorra recupera una nueva a los 5 minutos', () => {
+  const r = new RecicladorEstado();
+  r.iniciarForcejeo(); r.jugadorGana();
+  assert.equal(r.puedeForcejear, false);
+  assert.equal(r.avanzar(299), null);
+  assert.equal(r.avanzar(1), 'recupera');
+  assert.equal(r.puedeForcejear, true);
+});
+
+test('tras perder un forcejeo no acepta otro durante 2 minutos', () => {
+  const r = new RecicladorEstado();
+  r.iniciarForcejeo(); r.jugadorPierde();
+  assert.equal(r.enojado, true);
+  r.avanzar(119);
+  assert.equal(r.puedeForcejear, false);
+  r.avanzar(1);
+  assert.equal(r.puedeForcejear, true);
 });
