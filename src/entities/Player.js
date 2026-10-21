@@ -19,6 +19,8 @@ export class Player {
     this.speedWalk = PLAYER_SPEED_WALK;
     this.speedRun = PLAYER_SPEED_RUN;
     this.speedMult = 1; // debuff por salud mental baja
+    this.zorraMult = 1; // multiplicador de la zorra (0 = no se mueve)
+    this.canRun = true; // false mientras se empuja la zorra
     this._direction = new THREE.Vector3();
     this._forward = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -96,9 +98,9 @@ export class Player {
     }
 
     const { x, z } = this.input.axis;
-    const moving = (x !== 0 || z !== 0);
-    const running = this.input.isRunning && moving;
-    let speed = running ? this.speedRun : this.speedWalk;
+    const moving = (x !== 0 || z !== 0) && this.zorraMult > 0;
+    const running = this.input.isRunning && moving && this.canRun;
+    let speed = (running ? this.speedRun : this.speedWalk) * this.zorraMult;
     if (this.stats?.getSpeedMultiplier) {
       speed *= this.stats.getSpeedMultiplier();
     }
