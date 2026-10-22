@@ -72,6 +72,10 @@ export class SceneManager {
     const fog = this.scene.fog?.color;
     if (!bg) return;
 
+    // sobrio y ya restaurado: no se toca el color (otro sistema puede haberlo cambiado)
+    if (desaturation <= 0 && !(this._desaturacionAplicada > 0)) return;
+    this._desaturacionAplicada = desaturation;
+
     bg.copy(this._fondoBase);
 
     if (desaturation > 0) {

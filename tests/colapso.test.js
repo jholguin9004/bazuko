@@ -33,7 +33,7 @@ test('colapso: robo, reloj, valores finales y sin perder tipos de objeto', () =>
   assert.deepEqual(clock, { hour: 3, day: 4 });
   assert.equal(inv.items.length, 4); assert.equal(inv.count('lata'), 2);
   assert.equal(stats.salud, COLAPSO.salud); assert.equal(stats.animo, COLAPSO.animo);
-  assert.equal(sistema.traba, 0); assert.equal(sistema.dosis.length, 0); assert.equal(sistema.bajones.length, 2);
+  assert.equal(sistema.traba, 0); assert.equal(sistema.dosis.length, 0); assert.equal(sistema.bajones.length, 1);
   assert.deepEqual(r.posicion, { x: 1, y: 0, z: 2 });
 });
 test('colapso fuera del andén va al punto caminable más cercano', () => {

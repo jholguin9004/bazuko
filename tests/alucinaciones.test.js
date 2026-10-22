@@ -116,3 +116,38 @@ test('el tesoro falso aparece en la bolsa cercana y se apaga sin traba', () => {
   aluc.update(0.016, { ...ctx, efectos: { ...ctx.efectos, tesorosFalsos: 0 } });
   assert.equal(cerca.falsoTesoro, false);
 });
+
+test('la sombra con groundHeight conserva y = groundHeight(x, z) al caminar', async () => {
+  const altura = (x, z) => 0.2 + x * 0.1 + z * 0.05;
+  const s = new Sombra(new THREE.Scene(), new THREE.Vector3(), { isWalkable: () => true, groundHeight: altura });
+  await s.ready;
+  s.activar(new THREE.Vector3(0, 0, 0), 2); s.objetivo = new THREE.Vector3(4, 0, 2);
+  s.update(0.5, {});
+  assert.ok(s.position.x > 0);
+  assert.ok(Math.abs(s.position.y - altura(s.position.x, s.position.z)) < 1e-9);
+});
+
+test('precargar pasa groundHeight de la navegación y es idempotente', async () => {
+  const navigation = { isWalkableAt: () => true, nearestPoint: (x, z) => new THREE.Vector3(x, 0, z), groundHeight: () => 1.5 };
+  const aluc = new Alucinaciones(new THREE.Scene());
+  const p = aluc.precargar(navigation);
+  assert.equal(aluc.precargar(navigation), p);
+  await p;
+  assert.equal(aluc.sombras[0].groundHeight(0, 0), 1.5);
+  assert.ok(aluc.sombras.every((s) => s.fullChar));
+});
+
+test('no aparece una sombra más cerca de distanciaMinAparicion del jugador', async () => {
+  const aluc = new Alucinaciones(new THREE.Scene());
+  const navegacion = (dx) => ({ isWalkableAt: () => true, nearestPoint: (x, z) => new THREE.Vector3(dx, 0, 0) });
+  await aluc.precargar(navegacion(0));
+  const ctx = (nav) => ({
+    efectos: { nivel: 'muyTrabado', sombras: 1, tesorosFalsos: 0, velocidadSombra: 1 },
+    jugador: new THREE.Vector3(0, 0, 0), frente: new THREE.Vector3(0, 0, -1),
+    navigation: nav, pickups: [], stats: { animo: 50, salud: 50 }, avisar() {}
+  });
+  aluc.update(1000, ctx(navegacion(ALUCINACIONES.distanciaMinAparicion - 1)));
+  assert.equal(aluc.activas, 0);
+  aluc.update(1000, ctx(navegacion(ALUCINACIONES.distanciaMinAparicion + 1)));
+  assert.equal(aluc.activas, 1);
+});

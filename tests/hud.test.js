@@ -97,7 +97,7 @@ test('paneles estables conservan sus nodos y se refrescan cuando cambia el estad
   assert.equal(hud.dealerPanel.writes, 2);
 });
 
-test('consumir una sustancia delega en la traba; otro consumible no', () => {
+test('el gancho de consumo delega todos los consumibles en la traba', () => {
   const hud = fixture(); const llamadas = [];
   globalThis.window.__game = { stats: new StatsSystem(), traba: { consumir: id => llamadas.push(id) } };
   hud._toast = () => {};

@@ -30,12 +30,13 @@ export class Alucinaciones {
     if (this._precarga) return this._precarga;
     const isWalkable = (x, z) => navigation.isWalkableAt(x, z);
     for (let i = 0; i < this.cfg.maxSombras; i++) {
-      const s = new Sombra(this.scene, new THREE.Vector3(), { navigation, isWalkable }, this.cfg);
+      const s = new Sombra(this.scene, new THREE.Vector3(), { navigation, isWalkable, groundHeight: navigation.groundHeight }, this.cfg);
       s.root.visible = false;
       s.activa = false;
       this.sombras.push(s);
     }
-    this._precarga = Promise.all(this.sombras.map((s) => s.ready));
+    // además del modelo ligero, baja el modelo completo ahora para evitar un tirón al aparecer la primera
+    this._precarga = Promise.all(this.sombras.map((s) => s.preload().catch(() => {})));
     return this._precarga;
   }
 
@@ -79,7 +80,8 @@ export class Alucinaciones {
       if (libre) {
         const punto = puntoDeAparicion(jugador, frente, cfg);
         const pos = navigation.nearestPoint(punto.x, punto.z);
-        if (pos) libre.activar(pos, efectos.velocidadSombra);
+        const cerca = pos && Math.hypot(pos.x - jugador.x, pos.z - jugador.z) < cfg.distanciaMinAparicion;
+        if (pos && !cerca) libre.activar(pos, efectos.velocidadSombra);
       }
     }
 

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
 import { SceneManager } from '../src/core/Scene.js';
 
 test('applyMentalState no acumula entre cuadros', () => {
@@ -26,4 +27,11 @@ test('desaturación 1 da gris del color base', () => {
   s.applyMentalState(1);
   const gris = (r + g + b) / 3;
   for (const c of ['r', 'g', 'b']) assert.ok(Math.abs(s.scene.background[c] - gris) < 1e-9);
+});
+test('sobrio y sin desaturación previa no toca el fondo de otro sistema', () => {
+  const s = new SceneManager();
+  s.setTimeOfDay(12);
+  s.scene.background.setRGB(0.9, 0.1, 0.2); // otro sistema lo cambió
+  s.applyMentalState(0);
+  assert.ok(s.scene.background.equals(new THREE.Color(0.9, 0.1, 0.2)));
 });

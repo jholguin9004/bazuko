@@ -101,9 +101,18 @@ test('cortar convierte dosis en bajones; reiniciar limpia todo', () => {
   const s = new TrabaSystem();
   s.consumir('pegante'); s.consumir('bazuco'); s.update(1, stats());
   s.cortar();
-  assert.equal(s.traba, 0); assert.deepEqual(s.dosis, []); assert.equal(s.bajones.length, 2);
+  assert.equal(s.traba, 0); assert.deepEqual(s.dosis, []); assert.equal(s.bajones.length, 1);
+  assert.equal(s.bajones[0].id, 'bazuco'); // solo el bajón más fuerte
   s.reiniciar();
   assert.deepEqual(s.bajones, []); assert.equal(s.traba, 0);
+});
+test('cortar con bazuco x3 deja un único bajón brutal', () => {
+  const s = new TrabaSystem();
+  s.consumir('bazuco'); s.consumir('bazuco'); s.consumir('bazuco'); s.update(1, stats());
+  s.cortar();
+  assert.equal(s.bajones.length, 1);
+  assert.equal(s.perfiles[s.bajones[0].id].bajon, 'brutal');
+  assert.deepEqual(s.dosis, []); assert.equal(s.traba, 0);
 });
 test('serializa y carga; partida antigua y datos corruptos', () => {
   const s = new TrabaSystem(); s.consumir('pegante'); s.update(2, stats());

@@ -2,6 +2,8 @@
 // Capa visual de la traba: barra del HUD, viñeta oscura y fundido a negro del colapso.
 // Si no hay documento o faltan los nodos, no hace nada.
 
+import { TRABA } from '../data/sustancias.js';
+
 const NIVELES_CRITICOS = new Set(['zonaRoja', 'colapso']);
 
 export class TrabaOverlay {
@@ -15,7 +17,7 @@ export class TrabaOverlay {
   }
 
   update(traba, efectos) {
-    const ancho = Math.round(Math.max(0, Math.min(100, traba || 0)));
+    const ancho = Math.round(Math.max(0, Math.min(100, (traba || 0) / TRABA.max * 100)));
     if (this.relleno && ancho !== this._ancho) {
       this.relleno.style.width = `${ancho}%`;
       this._ancho = ancho;

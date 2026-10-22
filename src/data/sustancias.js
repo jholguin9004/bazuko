@@ -75,6 +75,7 @@ export const ALUCINACIONES = {
   tesoroPorSeg: 0.05,       // probabilidad/s de un tesoro falso, × peso de tesorosFalsos
   maxTesoros: 1,            // tesoros falsos simultáneos
   distanciaAparicion: 12,   // m del jugador a los que aparecen
+  distanciaMinAparicion: 6, // m mínimos al jugador del punto de aparición real (si queda más cerca, no aparece)
   distanciaDesvanecer: 25,  // m a los que se desvanecen
   radioAlcance: 0.9,        // m a los que una sombra "alcanza" al jugador
   radioTesoro: 15,          // m de distancia máxima a la que aparece un tesoro falso

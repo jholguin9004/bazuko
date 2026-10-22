@@ -9,11 +9,11 @@ export class Sombra extends Npc {
   /**
    * @param {THREE.Scene} scene
    * @param {THREE.Vector3} posicion
-   * @param {{ navigation?: object, isWalkable?: (x:number, z:number) => boolean }} opts
+   * @param {{ navigation?: object, isWalkable?: (x:number, z:number) => boolean, groundHeight?: (x:number, z:number) => number }} opts
    */
-  constructor(scene, posicion, { navigation = null, isWalkable } = {}, cfg = ALUCINACIONES) {
+  constructor(scene, posicion, { navigation = null, isWalkable, groundHeight } = {}, cfg = ALUCINACIONES) {
     // sin `navigation` en el padre: la sombra no sigue rutas, persigue su objetivo
-    super(scene, posicion, { isWalkable, speed: 0 });
+    super(scene, posicion, { isWalkable, groundHeight, speed: 0 });
     this.cfg = cfg;
     this.navegacion = navigation;
     this.material = new THREE.MeshBasicMaterial({

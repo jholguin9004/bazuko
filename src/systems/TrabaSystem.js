@@ -152,11 +152,24 @@ export class TrabaSystem {
 
   getSpeedMultiplier() { return this.efectos().velocidad; }
 
-  /** Corta el efecto: cada dosis activa pasa a bajón de inmediato y la traba queda en 0 */
+  /**
+   * Corta el efecto: las dosis activas pasan a UN solo bajón (el más fuerte, también frente a los
+   * ya existentes) y la traba queda en 0. Mezclar solo apila bajones con el vencimiento normal.
+   */
   cortar() {
+    const candidatos = [...this.bajones];
     for (const d of this.dosis) {
-      this.bajones.push({ id: d.id, restante: this.defBajones[this.perfiles[d.id].bajon].duracion });
+      candidatos.push({ id: d.id, restante: this.defBajones[this.perfiles[d.id].bajon].duracion });
     }
+    const fuerza = (b) => {
+      const def = this.defBajones[this.perfiles[b.id].bajon];
+      return def.animo + def.energia;
+    };
+    let mejor = null;
+    for (const b of candidatos) {
+      if (!mejor || fuerza(b) > fuerza(mejor) || (fuerza(b) === fuerza(mejor) && b.restante > mejor.restante)) mejor = b;
+    }
+    this.bajones = mejor ? [mejor] : [];
     this.dosis = [];
     this.traba = 0;
   }
