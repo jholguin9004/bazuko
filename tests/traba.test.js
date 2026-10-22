@@ -34,6 +34,13 @@ test('dominante: la dosis con más aporte reciente', () => {
   for (let i = 0; i < 5; i++) t.update(1, st);
   assert.equal(t.dominante(), 'pegante');
 });
+test('dominante: una dosis a punto de acabarse pierde contra una recién tomada', () => {
+  const s = new TrabaSystem(), st = stats();
+  s.consumir('bazuco'); for (let i = 0; i < 43; i++) s.update(1, st);
+  s.consumir('pegante'); s.update(1, st);
+  assert.ok(s.dosis.some(d => d.id === 'bazuco'));
+  assert.equal(s.dominante(), 'pegante');
+});
 test('velocidad: bazuco trabado ×1.25; pastilla leve ×1.015; sobrio ×1', () => {
   const s = new TrabaSystem(); s.consumir('bazuco'); s.update(1, stats());
   near(s.getSpeedMultiplier(), 1.25);

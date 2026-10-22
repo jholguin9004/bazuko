@@ -114,12 +114,13 @@ export class TrabaSystem {
     return { nivel, cambioNivel: nivel !== nivelAntes, colapso };
   }
 
-  /** Id de la dosis con más traba liberada hasta ahora, o null si no hay dosis */
+  /** Id de la dosis con más peso: traba liberada × fracción de duración restante (null si no hay dosis) */
   dominante() {
     let mejor = null, aporte = -1;
     for (const d of this.dosis) {
-      const liberado = this.perfiles[d.id].traba - d.pendiente;
-      if (liberado > aporte) { aporte = liberado; mejor = d.id; }
+      const p = this.perfiles[d.id];
+      const puntaje = (p.traba - d.pendiente) * (d.restante / p.duracion);
+      if (puntaje > aporte) { aporte = puntaje; mejor = d.id; }
     }
     return mejor;
   }
