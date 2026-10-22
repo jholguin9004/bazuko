@@ -12,7 +12,7 @@ export const ZORRA = {
     fuerza: 1.2            // ×: fuerza en el forcejeo para el origen reciclador
   },
   teclas: {
-    soltar: 'KeyZ',        // tecla para soltar la zorra
+    soltar: 'KeyG',        // tecla para soltar la zorra
     forcejear: 'KeyE',     // tecla para machacar durante el forcejeo
     cancelar: 'Escape'     // tecla para rendirse
   }
