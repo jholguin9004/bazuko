@@ -123,3 +123,17 @@ test('reutilizar el vector de salida conserva el resultado y el deslizamiento de
     assert.deepEqual(position.toArray(), expected.toArray());
   }
 });
+
+test('el balanceo no se acumula entre cuadros y en cero no cambia la vista', () => {
+  const camera = rig(), p = new THREE.Vector3(10, 0, 10);
+  camera.follow(p, 1 / 60); const base = camera.camera.quaternion.clone();
+  camera.lateral = 0.03; camera.alabeo = 0.04;
+  camera.follow(p, 1 / 60); const una = camera.camera.quaternion.clone();
+  for (let i = 0; i < 30; i++) camera.follow(p, 1 / 60);
+  assert.ok(camera.camera.quaternion.angleTo(una) < 1e-9);
+  assert.ok(una.angleTo(base) > 0);
+  camera.lateral = camera.alabeo = 0; camera.follow(p, 1 / 60);
+  assert.ok(camera.camera.quaternion.angleTo(base) < 1e-9);
+  camera.prepareMovement();
+  near(camera.camera.rotation.z, 0); // WASD no hereda el alabeo
+});

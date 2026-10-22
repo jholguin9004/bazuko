@@ -3,6 +3,7 @@ import { beforeEach, test } from 'node:test';
 import { StatsSystem } from '../src/systems/StatsSystem.js';
 import { Clock } from '../src/core/Clock.js';
 import { DiseaseSystem } from '../src/systems/DiseaseSystem.js';
+import { WITHDRAWAL } from '../src/utils/constants.js';
 
 beforeEach(() => { globalThis.window = new EventTarget(); });
 
@@ -75,4 +76,13 @@ test('el ánimo usa un solo cálculo, incluye la noche y respeta los talentos', 
   assert.ok(night.animo < day.animo);
   assert.ok(Math.abs((100 - trained.animo) * 2 - (100 - night.animo)) < 1e-7);
   assert.equal(trained.saludMental, trained.animo);
+});
+
+test('la traba multiplica la velocidad junto a los demás efectos', () => {
+  const stats = new StatsSystem();
+  assert.equal(stats.getSpeedMultiplier(), 1);
+  stats.trabaSystem = { getSpeedMultiplier: () => 1.25 };
+  assert.equal(stats.getSpeedMultiplier(), 1.25);
+  stats.vicio = 0;
+  assert.equal(stats.getSpeedMultiplier(), 1.25 * WITHDRAWAL.velocidad);
 });

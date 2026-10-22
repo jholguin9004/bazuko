@@ -139,6 +139,7 @@ export class StatsSystem {
     if (this.animo === 0) mult *= 0.7; // crítico
     if (this.energia === 0) mult *= 0.5;
     if (this.inWithdrawal) mult *= WITHDRAWAL.velocidad;
+    mult *= this.trabaSystem?.getSpeedMultiplier() ?? 1;
     return mult;
   }
 

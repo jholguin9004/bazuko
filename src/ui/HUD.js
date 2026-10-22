@@ -298,6 +298,7 @@ export class HUD {
         const delta = (k === item.consumable ? item.amount : 0) + (k !== item.consumable ? (item[k] ?? 0) : 0);
         if (delta) game.stats[k] = Math.max(0, Math.min(100, game.stats[k] + delta));
       }
+      game.traba?.consumir(itemId);
       inv.remove(itemId, 1);
       game.audio?.play('pickup');
       game.player?.playAction?.('comer', 1.2);

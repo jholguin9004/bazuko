@@ -22,6 +22,8 @@ export class CameraRig {
     this._ray = new THREE.Ray();
     this._snap = true;
     this._drag = null;
+    this.lateral = 0; // balanceo de la traba: giro lateral en radianes
+    this.alabeo = 0;  // balanceo de la traba: inclinación en radianes
 
     try {
       if (localStorage.getItem('bazuko.camera') === 'isometric') this.mode = 'isometric';
@@ -140,6 +142,8 @@ export class CameraRig {
     this._desired.copy(this._look);
     if (this.mode === 'third-person') this._desired.addScaledVector(this._direction, -1);
     this.camera.lookAt(this._desired);
+    if (this.lateral) this.camera.rotateY(this.lateral);
+    if (this.alabeo) this.camera.rotateZ(this.alabeo);
     this.camera.updateMatrixWorld();
     this._snap = false;
   }

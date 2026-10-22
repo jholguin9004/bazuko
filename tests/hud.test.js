@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HUD } from '../src/ui/HUD.js';
+import { StatsSystem } from '../src/systems/StatsSystem.js';
+import { InventorySystem } from '../src/systems/InventorySystem.js';
+import { ITEMS } from '../src/data/items.js';
 
 function element() {
   return {
@@ -92,4 +95,13 @@ test('paneles estables conservan sus nodos y se refrescan cuando cambia el estad
   assert.equal(hud.talentPanel.writes, 2);
   assert.equal(hud.craftPanel.writes, 2);
   assert.equal(hud.dealerPanel.writes, 2);
+});
+
+test('consumir una sustancia delega en la traba; otro consumible no', () => {
+  const hud = fixture(); const llamadas = [];
+  globalThis.window.__game = { stats: new StatsSystem(), traba: { consumir: id => llamadas.push(id) } };
+  hud._toast = () => {};
+  const inv = new InventorySystem(); inv.add(ITEMS.bazuco); inv.add(ITEMS.pan);
+  hud._useItem('bazuco', inv); hud._useItem('pan', inv);
+  assert.deepEqual(llamadas, ['bazuco', 'pan']); // el gancho delega todo; TrabaSystem ignora 'pan'
 });
