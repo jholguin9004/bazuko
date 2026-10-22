@@ -117,3 +117,15 @@ test('morir trabado reinicia la traba al reaparecer', () => {
   assert.deepEqual(traba.sistema.serialize(), { traba: 0, dosis: [], bajones: [] });
   assert.equal(game.paused, false);
 });
+
+test('sobrio deja desvío 0 y mult 1; reiniciar los restablece', () => {
+  const { c, game } = fixture();
+  game.input.axis = { x: 0, z: -1 };
+  c.update(0.1);
+  assert.equal(game.player.desvio, 0); assert.equal(game.player.tambaleoMult, 1);
+  c.sistema.traba = 90; c.sistema.dosis = [{ id: 'pegante', pendiente: 0, restante: 100 }];
+  c.update(2);
+  assert.notEqual(game.player.desvio, 0);
+  c.reiniciar();
+  assert.equal(game.player.desvio, 0); assert.equal(game.player.tambaleoMult, 1);
+});

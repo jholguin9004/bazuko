@@ -5,6 +5,7 @@ import { TrabaSystem, calcularMareo, NIVELES } from '../systems/TrabaSystem.js';
 import { aplicarColapso } from '../systems/colapso.js';
 import { elegirTexto } from '../systems/alucinaciones.js';
 import { Alucinaciones } from '../entities/Alucinaciones.js';
+import { Tambaleo } from '../systems/tambaleo.js';
 import { TrabaOverlay } from '../ui/TrabaOverlay.js';
 import { MAREO, TEXTOS } from '../data/sustancias.js';
 import { el, button } from '../ui/dom.js';
@@ -24,6 +25,7 @@ export class TrabaController {
     this.overlay = new TrabaOverlay();
     this.alucinaciones = new Alucinaciones(game.sceneMgr.scene);
     this._t = 0;
+    this.tambaleo = new Tambaleo();
     this._colapsoAbierto = false;
   }
 
@@ -51,6 +53,12 @@ export class TrabaController {
     game.cameraRig.alabeo = mareo.alabeo;
     game.sceneMgr.applyMentalState(efectos.mareo * MAREO.desaturacionMax);
     this.overlay.update(this.sistema.traba, efectos);
+    const eje = game.input?.axis;
+    const t = (this.tambaleo ??= new Tambaleo()).update(dt, {
+      intensidad: efectos.mareo, nivel: efectos.nivel, moviendose: !!eje && (eje.x !== 0 || eje.z !== 0)
+    });
+    game.player.desvio = t.desvio;
+    game.player.tambaleoMult = t.velocidad;
 
     const camera = game.cameraRig.camera;
     this.alucinaciones.update(dt, {
@@ -70,6 +78,7 @@ export class TrabaController {
   cortar() {
     this.sistema.cortar();
     this.alucinaciones.limpiar();
+    this._quitarTambaleo();
   }
 
   reiniciar() {
@@ -77,6 +86,7 @@ export class TrabaController {
     this.alucinaciones.limpiar();
     this.overlay.reiniciar();
     this._quitarBalanceo();
+    this._quitarTambaleo();
     this._colapsoAbierto = false;
   }
 
@@ -121,10 +131,19 @@ export class TrabaController {
     this.alucinaciones.limpiar();
     this.overlay.reiniciar();
     this._quitarBalanceo();
+    this._quitarTambaleo();
     game._save();
     game.menu.close();
     avisar(`🚨 Te robaron ${cop(robado)} y material mientras estabas tirado.`, 'death');
     this._colapsoAbierto = false;
+  }
+
+  _quitarTambaleo() {
+    this.tambaleo?.reiniciar();
+    const p = this.game?.player;
+    if (!p) return;
+    p.desvio = 0;
+    p.tambaleoMult = 1;
   }
 
   _quitarBalanceo() {

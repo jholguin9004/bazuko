@@ -9,6 +9,8 @@ import {
 import { createCharacter } from '../character/character.js';
 import { createRealisticCharacter, REALISTIC_SCALE } from '../character/RealisticCharacter.js';
 
+const EJE_Y = new THREE.Vector3(0, 1, 0);
+
 export class Player {
   constructor(scene, input, stats=null) {
     this.input = input;
@@ -19,6 +21,8 @@ export class Player {
     this.speedWalk = PLAYER_SPEED_WALK;
     this.speedRun = PLAYER_SPEED_RUN;
     this.speedMult = 1; // debuff por salud mental baja
+    this.desvio = 0;      // rad: giro del rumbo al estar trabado
+    this.tambaleoMult = 1; // ritmo irregular al estar trabado
     this._direction = new THREE.Vector3();
     this._forward = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -102,6 +106,7 @@ export class Player {
     if (this.stats?.getSpeedMultiplier) {
       speed *= this.stats.getSpeedMultiplier();
     }
+    speed *= this.tambaleoMult ?? 1;
     // Movimiento
     const dir = this._direction.set(x, 0, z);
     if (camera?.userData.cameraMode === 'third-person') {
@@ -111,7 +116,7 @@ export class Player {
       const right = this._right.set(-forward.z, 0, forward.x);
       dir.copy(right).multiplyScalar(x).addScaledVector(forward, -z);
     }
-    if (moving) dir.normalize();
+    if (moving) dir.normalize().applyAxisAngle(EJE_Y, this.desvio ?? 0);
     const delta = this._delta.copy(dir).multiplyScalar(moving ? speed * dt : 0);
 
     const before = this._before.copy(this.position);

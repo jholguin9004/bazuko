@@ -131,3 +131,18 @@ export function describirEfecto(item) {
   const icono = ICONOS[item.id];
   return (icono ? `${icono} ` : '') + partes.join(', ');
 }
+
+/** Caminar irregular mientras se está trabado */
+export const TAMBALEO = {
+  desvioMax: 0.45,            // rad de desvío máximo con intensidad 1 (≈25°)
+  frecuencia1: 0.13,          // Hz de la primera onda del desvío
+  frecuencia2: 0.31,          // Hz de la segunda onda del desvío
+  fase2: 1.3,                 // rad de desfase de la segunda onda
+  mezcla: 0.6,                // peso de la primera onda (la segunda pesa 1 - mezcla)
+  ritmoAmplitud: 0.15,        // ± fracción de velocidad con intensidad 1
+  ritmoFrecuencia: 1.6,       // Hz del cambio de ritmo al caminar
+  tropezonDesde: 'muyTrabado', // nivel mínimo para tropezar
+  tropezonIntervalo: [4, 8],  // s entre tropezones (rango aleatorio)
+  tropezonDuracion: 0.5,      // s que dura un tropezón
+  tropezonAngulo: 1.2         // rad de desvío lateral en un tropezón (signo aleatorio)
+};
