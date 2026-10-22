@@ -27,6 +27,7 @@ import { InteractionSystem } from '../systems/InteractionSystem.js';
 import { DiseaseSystem } from '../systems/DiseaseSystem.js';
 import { TalentSystem } from '../systems/TalentSystem.js';
 import { CraftingSystem } from '../systems/CraftingSystem.js';
+import { robarPertenencias, avanzarHoras } from '../systems/descanso.js';
 
 import { HUD } from '../ui/HUD.js';
 import { PerformanceHUD } from '../ui/PerformanceHUD.js';
@@ -38,7 +39,7 @@ import { Menu } from '../ui/Menu.js';
 import { createCreator } from '../ui/Creator.js';
 import { openRecycler, openShop, openCambuche } from '../ui/placeMenus.js';
 import { DEFAULT_LOOK, normalizeLook } from '../character/look.js';
-import { ITEMS, COSTAL_BONUS, isRecyclable } from '../data/items.js';
+import { COSTAL_BONUS } from '../data/items.js';
 import { SLEEP } from '../data/cambuche.js';
 import { cop } from '../utils/money.js';
 
@@ -434,8 +435,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       ? (this.clock.hour >= 6 ? 24 - this.clock.hour + 6 : 6 - this.clock.hour)
       : 3;
     const factor = Math.min(1, hours / 8); // una siesta rinde menos
-    this.clock.hour += hours;
-    while (this.clock.hour >= 24) { this.clock.hour -= 24; this.clock.day += 1; }
+    avanzarHoras(this.clock, hours);
 
     const b = this.built;
     const st = this.stats;
@@ -450,14 +450,10 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     // Sin paredes te pueden robar si duermes de noche
     let robbed = null;
     if (night && !b.paredes && Math.random() < SLEEP.roboProb) {
-      const lost = Math.floor(st.dinero * SLEEP.roboDinero);
-      st.dinero -= lost;
-      for (const it of [...this.inventory.items]) {
-        if (isRecyclable(ITEMS[it.id] ?? it)) this.inventory.remove(it.id, Math.ceil(it.qty * SLEEP.roboMaterial));
-      }
-      robbed = lost;
+      robbed = robarPertenencias(st, this.inventory, { dinero: SLEEP.roboDinero, material: SLEEP.roboMaterial });
     }
 
+    this.traba?.cortar();
     this._save();
 
     setTimeout(() => {
