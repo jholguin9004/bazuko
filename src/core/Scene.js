@@ -13,6 +13,9 @@ export class SceneManager {
     // Niebla Noir: oculta el final del mundo
     this.scene.fog = new THREE.Fog(0x1a1a1d, 30, 120);
 
+    // Color base del cielo (sin desaturación); applyMentalState siempre parte de aquí
+    this._fondoBase = this.scene.background.clone();
+
     // Luz ambiental fría (brutalismo)
     this.ambient = new THREE.HemisphereLight(0x556070, 0x0a0a0a, 0.6);
     this.scene.add(this.ambient);
@@ -48,6 +51,7 @@ export class SceneManager {
     this.sun.color.set(0xffe8cc).lerp(_DUSK, Math.min(1, dusk) * 0.6);
     this.scene.background.copy(_NIGHT).lerp(_DAY, day).lerp(_DUSK_SKY, Math.min(1, dusk) * 0.35);
     this.scene.fog.color.copy(this.scene.background);
+    this._fondoBase.copy(this.scene.background);
     this.scene.fog.near = 35 + day * 25;
     this.scene.fog.far = 110 + day * 60;
   }
@@ -58,24 +62,27 @@ export class SceneManager {
     this.sun.position.set(pos.x + 30, 60, pos.z + 18);
   }
 
-    /** Ajusta el color de fondo/fog según ánimo */
+  /**
+   * Ajusta el color de fondo/fog según el ánimo. Parte siempre del color base que dejó
+   * setTimeOfDay, así que es idempotente: llamarlo en cada cuadro no acumula desaturación.
+   */
   applyMentalState(desaturation) {
     // desaturation: 0 = normal, 1 = gris total
-    if (desaturation <= 0) return;
-
-    // Mezcla el color actual del fondo hacia gris
     const bg = this.scene.background;
     const fog = this.scene.fog?.color;
     if (!bg) return;
 
-    const r = bg.r, g = bg.g, b = bg.b;
-    const gray = (r + g + b) / 3;
+    bg.copy(this._fondoBase);
 
-    bg.setRGB(
-      r * (1 - desaturation) + gray * desaturation,
-      g * (1 - desaturation) + gray * desaturation,
-      b * (1 - desaturation) + gray * desaturation
-    );
+    if (desaturation > 0) {
+      const { r, g, b } = this._fondoBase;
+      const gray = (r + g + b) / 3;
+      bg.setRGB(
+        r * (1 - desaturation) + gray * desaturation,
+        g * (1 - desaturation) + gray * desaturation,
+        b * (1 - desaturation) + gray * desaturation
+      );
+    }
 
     if (fog) fog.copy(bg);
   }
