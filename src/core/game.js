@@ -32,6 +32,7 @@ import { robarPertenencias, avanzarHoras } from '../systems/descanso.js';
 import { HUD } from '../ui/HUD.js';
 import { PerformanceHUD } from '../ui/PerformanceHUD.js';
 import { LocalLights } from './LocalLights.js';
+import { TrabaController } from './TrabaController.js';
 import { loadInBatches, withLoadTimeout } from './Startup.js';
 import { paintLoadingFrame } from '../ui/LoadingScreen.js';
 import { el, button } from '../ui/dom.js';
@@ -68,6 +69,7 @@ export class Game {
     this.diseases = new DiseaseSystem();
     this.talents = new TalentSystem();
     this.crafting = new CraftingSystem();
+    this.traba = new TrabaController(this);
 
     // Mundo + jugador
     this.world = new World(this.sceneMgr.scene);
@@ -389,6 +391,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       this.inventory.deserialize(data.inventory ?? {});
       this.talents.deserialize(data.talents ?? {});
       this.diseases.deserialize(data.diseases ?? {});
+      this.traba?.deserialize(data.traba);
       if (data.player) {
         // partidas de otro mapa: si la posición guardada no es transitable, vuelve al inicio
         const district = this.world.active;
@@ -410,6 +413,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       inventory: this.inventory.serialize(),
       talents: this.talents.serialize(),
       diseases: this.diseases.serialize(),
+      traba: this.traba?.serialize(),
       player: { pos: this.player.position.toArray() },
       worldLayoutVersion: this.world.active?.layoutVersion ?? 0,
       look: this.look,
@@ -512,11 +516,19 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     // Recuperar todas las necesidades evita seguir recibiendo daño al reaparecer.
     for (const need of NEEDS) this.stats[need] = Math.max(60, this.stats[need]);
     this.diseases.cureAll();
+    this.traba?.reiniciar();
 
     const district = this.world.active;
     if (district?.reserved) {
       this.player.position.set(district.reserved.bed.x, 0, district.reserved.bed.z + 2);
     }
+    this._reubicarJugador();
+    this._deathPending = false;
+    this.menu.close();
+  }
+
+  /** Sincroniza modelo y cámara con la posición del jugador y limpia interacción e input */
+  _reubicarJugador() {
     this.player.root.position.copy(this.player.position);
     this.cameraRig._snap = true;
     this.cameraRig.follow(this.player.position, 0, this.collisions);
@@ -524,8 +536,6 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     this.interaction.currentTargetType = null;
     this.input.keys = {};
     this.input.endFrame();
-    this._deathPending = false;
-    this.menu.close();
   }
 
   _loop = () => {
@@ -567,6 +577,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
 
     // 4. Stats
     this.stats.update(dt, this.player, this.diseases, this.clock, this.talents);
+    if (this.traba?.update(dt)) return;
     if (this._handleDeath()) return;
 
     // 4b. Aplicar bono de peso por talentos

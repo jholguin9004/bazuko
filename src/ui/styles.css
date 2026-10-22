@@ -240,6 +240,18 @@ canvas { display: block; width: 100vw; height: 100vh; }
 .stat-bar[data-stat="higiene"] .fill { background: #4ab5e8; }
 .stat-bar[data-stat="animo"] .fill   { background: #9b59b6; }
 .stat-bar[data-stat="vicio"] .fill   { background: #e67e22; }
+.stat-bar[data-stat="traba"] .fill   { background: #1abc9c; width: 0%; }
+.stat-bar[data-stat="traba"].critical .fill { background: #c0392b; }
+
+/* === Viñeta de la traba y fundido a negro del colapso === */
+#traba-vineta {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.85) 100%);
+  opacity: 0;
+  transition: opacity .5s;
+}
+#traba-vineta.fundido { background: #000; opacity: 1 !important; }
 #player-name { font-weight: 800; color: #f6c400; }
 #player-name:empty { display: none; }
 .stat-bar.critical .bar { border-color: #c0392b; animation: stat-critical 0.9s ease-in-out infinite alternate; }
