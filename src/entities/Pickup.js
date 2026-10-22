@@ -76,6 +76,9 @@ export class Pickup {
 
     this._boostActive = false;
     this.onRespawn = null;
+    // Alucinación: la bolsa brilla como si tuviera algo, pero al recogerla está vacía
+    this.falsoTesoro = false;
+    this.onFalsoTesoro = null;
   }
 
   get position() { return this.group.position; }
@@ -83,6 +86,10 @@ export class Pickup {
 
   setBoost(active) {
     this._boostActive = active;
+  }
+
+  setFalsoTesoro(activo) {
+    this.falsoTesoro = activo;
   }
 
   /** Iniciar selección de basura */
@@ -111,6 +118,13 @@ export class Pickup {
    */
   harvest(boostActive = false, sorted = false, talentEffects = {}) {
     if (this.used || this.cooldown > 0) return null;
+    if (this.falsoTesoro) {
+      // no consume la bolsa: solo se rompe el espejismo
+      this.falsoTesoro = false;
+      this.stopSorting();
+      this.onFalsoTesoro?.(this);
+      return null;
+    }
 
     const rareChanceMult = talentEffects.rareChanceMult ?? 1;
 
@@ -179,8 +193,9 @@ export class Pickup {
     }
 
     if (this.aura.visible) {
-      const targetOpacity = this._boostActive ? 0.7 : 0.0;
-      const targetScale = this._boostActive
+      const brilla = this._boostActive || this.falsoTesoro;
+      const targetOpacity = brilla ? 0.7 : 0.0;
+      const targetScale = brilla
         ? 1.0 + Math.sin(performance.now() * 0.005) * 0.15
         : 1.0;
 
