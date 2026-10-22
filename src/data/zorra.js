@@ -17,6 +17,11 @@ export const ZORRA = {
     robar: 'KeyG',         // tecla para llevarse la zorra descuidada de un reciclador
     forcejear: 'KeyE',     // tecla para iniciar y machacar el forcejeo
     cancelar: 'KeyG'       // tecla para rendirse en el forcejeo
+  },
+  mapa: {
+    nombre: 'Tu zorra',    // etiqueta en el radar cuando la zorra está en el suelo
+    icono: '🛒',           // icono en el radar
+    color: '#c98a3a'       // color del punto en el radar
   }
 };
 

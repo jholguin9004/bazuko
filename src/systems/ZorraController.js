@@ -230,6 +230,14 @@ export class ZorraController {
     if (game.zorra.empujando) toast(TEXTOS_ZORRA.muerte);
   }
 
+  /** Punto del radar para la zorra propia: solo cuando está en el suelo. */
+  poi() {
+    const { zorra } = this.game;
+    if (zorra?.estado !== 'dropped' || !zorra.pos) return null;
+    const { nombre, icono, color } = ZORRA.mapa;
+    return { name: nombre, icon: icono, x: zorra.pos[0], z: zorra.pos[2], color };
+  }
+
   dispose() {
     this._quitarRecicladores(this.game.world?.active);
     this.zorraJugador?.dispose();

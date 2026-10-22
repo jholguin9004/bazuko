@@ -33,6 +33,18 @@ test('la capacidad suma la zorra solo mientras se empuja', () => {
   assert.equal(game.inventory.maxWeight, 40);
 });
 
+test('el radar muestra la zorra solo cuando está en el suelo', () => {
+  const game = juego();
+  const ctl = Object.assign(Object.create(ZorraController.prototype), { game });
+  assert.equal(ctl.poi(), null);
+  game.zorra.obtener();
+  assert.equal(ctl.poi(), null);
+  game.zorra.soltar([12, 0, -7], 0);
+  assert.deepEqual(ctl.poi(), { name: 'Tu zorra', icon: '🛒', x: 12, z: -7, color: '#c98a3a' });
+  game.zorra.agarrar();
+  assert.equal(ctl.poi(), null);
+});
+
 test('el punto para agarrar la zorra es donde estaba el jugador, no el modelo', () => {
   const z = new Zorra(new THREE.Scene(), { crearModelo: () => new THREE.Group() });
   z.colocarDelante(new THREE.Vector3(10, 0, 5), 0);

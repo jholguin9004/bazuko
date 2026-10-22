@@ -754,7 +754,8 @@ export class Game {
       { name: 'Tienda', icon: '🏪', x: this.shop?.position?.x ?? this.shop?.group?.position?.x ?? reserved.shop?.x ?? 34, z: this.shop?.position?.z ?? this.shop?.group?.position?.z ?? reserved.shop?.z ?? 29, color: '#2ecc71' },
       { name: 'Crafteo', icon: '🔨', x: this.craftingStation?.position?.x ?? this.craftingStation?.group?.position?.x ?? reserved.craft?.x ?? 16.5, z: this.craftingStation?.position?.z ?? this.craftingStation?.group?.position?.z ?? reserved.craft?.z ?? 24.5, color: '#e67e22' },
       { name: 'Dealer', icon: '💀', x: this.dealer?.position?.x ?? this.dealer?.group?.position?.x ?? reserved.dealer?.x ?? 56, z: this.dealer?.position?.z ?? this.dealer?.group?.position?.z ?? reserved.dealer?.z ?? 56, color: '#9b59b6' },
-      ...(this._dogPOI ? [this._dogPOI] : [])
+      ...(this._dogPOI ? [this._dogPOI] : []),
+      ...[this.zorraCtl?.poi?.()].filter(Boolean)
     ];
     return this._lastPOIs;
   }
