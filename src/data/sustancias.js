@@ -22,10 +22,10 @@ export const PERFILES = {
   bazuco: {
     traba: 40,
     subida: 1,
-    duracion: 45,
+    duracion: 90,
     bajon: 'brutal',
     velocidadSombra: 4.5,
-    pesos: { velocidad: 1, euforia: 0.5, mareo: 0.2, sombras: 1, tesorosFalsos: 0.1 }
+    pesos: { velocidad: 1, euforia: 0.5, mareo: 0.8, sombras: 1, tesorosFalsos: 0.1 }
   }
 };
 
@@ -54,11 +54,11 @@ export const BAJONES = {
 
 /** Mareo de cámara */
 export const MAREO = {
-  porNivel: { leve: 0, trabado: 0, muyTrabado: 0.5, zonaRoja: 1 }, // intensidad base por nivel (0–1)
+  porNivel: { leve: 0, trabado: 0.4, muyTrabado: 0.5, zonaRoja: 1 }, // intensidad base por nivel (0–1)
   pisoPeso: 0.3,           // fracción mínima de intensidad aunque el peso de mareo sea 0
-  amplitudLateral: 0.03,   // rad de giro lateral máximo
+  amplitudLateral: 0.06,   // rad de giro lateral máximo
   frecuenciaLateral: 0.25, // Hz
-  amplitudAlabeo: 0.04,    // rad de alabeo máximo
+  amplitudAlabeo: 0.08,    // rad de alabeo máximo
   frecuenciaAlabeo: 0.18,  // Hz
   desaturacionMax: 0.5     // desaturación del color (0–1) con mareo 1
 };

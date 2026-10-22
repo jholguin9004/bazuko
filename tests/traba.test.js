@@ -9,7 +9,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, `${a} != ${b}`);
 
 test('el bazuco pega de una; la pastilla tarda', () => {
   const a = new TrabaSystem(); a.consumir('bazuco'); a.update(1, stats());
-  near(a.traba, 40 - (TRABA.decaimientoBase + 40 / 45) * 1);
+  near(a.traba, PERFILES.bazuco.traba - (TRABA.decaimientoBase + PERFILES.bazuco.traba / PERFILES.bazuco.duracion) * 1);
   const b = new TrabaSystem(); b.consumir('pastilla'); b.update(1, stats());
   near(b.traba, 35 / 40 - TRABA.decaimientoBase);
 });
@@ -36,7 +36,7 @@ test('dominante: la dosis con más aporte reciente', () => {
 });
 test('dominante: una dosis a punto de acabarse pierde contra una recién tomada', () => {
   const s = new TrabaSystem(), st = stats();
-  s.consumir('bazuco'); for (let i = 0; i < 43; i++) s.update(1, st);
+  s.consumir('bazuco'); for (let i = 0; i < PERFILES.bazuco.duracion - 2; i++) s.update(1, st);
   s.consumir('pegante'); s.update(1, st);
   assert.ok(s.dosis.some(d => d.id === 'bazuco'));
   assert.equal(s.dominante(), 'pegante');
@@ -66,7 +66,7 @@ test('sombras y tesoros solo desde muy trabado', () => {
 });
 test('el bajón llega al terminar la dosis y resta su total', () => {
   const s = new TrabaSystem(), st = stats();
-  s.consumir('bazuco'); for (let i = 0; i < 45; i++) s.update(1, st);
+  s.consumir('bazuco'); for (let i = 0; i < PERFILES.bazuco.duracion; i++) s.update(1, st);
   assert.equal(s.dosis.length, 0); assert.equal(s.bajones.length, 1);
   assert.equal(s.nivel, 'leve');
   const antes = { ...st }, B = BAJONES.brutal;
@@ -132,4 +132,9 @@ test('calcularMareo: cero sin intensidad, acotado por la amplitud', () => {
     assert.ok(Math.abs(m.alabeo) <= MAREO.amplitudAlabeo + 1e-12);
   }
   near(calcularMareo(1 / (4 * MAREO.frecuenciaLateral), 1).lateral, MAREO.amplitudLateral);
+});
+test('mareo: un bazuco ya trabado marea (MAREO.porNivel.trabado × peso)', () => {
+  const s = new TrabaSystem(); s.consumir('bazuco'); s.update(1, stats());
+  assert.equal(s.nivel, 'trabado');
+  assert.ok(s.efectos().mareo > 0);
 });
