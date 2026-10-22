@@ -50,7 +50,7 @@ export function createCreator({ audio }) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
     scene.add(new THREE.HemisphereLight('#dfe8ff', '#5a4632', 1.3));
@@ -308,6 +308,9 @@ export function createCreator({ audio }) {
   return {
     /** Abre el editor. Devuelve una promesa con la apariencia elegida (o null si se cancela). */
     async open(current, { doneLabel = 'Listo', onReady = () => {} } = {}) {
+      if (typeof document !== 'undefined' && document.pointerLockElement) {
+        try { document.exitPointerLock(); } catch {}
+      }
       catalog ??= await loadCatalog();
       look = normalizeLook(current);
       look.real = normalizeReal(catalog, look.real);

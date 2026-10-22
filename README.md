@@ -1,8 +1,6 @@
-# Vagabundo
+# Vagabundo / Bazuko
 
 Juego de supervivencia urbana en 3D para el navegador, ambientado en un barrio inspirado en el centro de Bogotá, Santa Inés y El Cartucho. Explora las calles, recoge y vende materiales, consigue comida y agua y mejora tu cambuche.
-
-Este proyecto es un fork de [juanagogo/bazuko](https://github.com/juanagogo/bazuko), con mejoras de cámara, visibilidad, circulación y equilibrio de supervivencia.
 
 ![Vista isométrica del barrio, con calles amplias, andenes y pasos peatonales](docs/images/barrio-isometrico.jpg)
 
@@ -14,6 +12,11 @@ Este proyecto es un fork de [juanagogo/bazuko](https://github.com/juanagogo/bazu
 - Carros y taxis en movimiento y un bus articulado que circula por la troncal y para en la estación.
 - Calzadas de 12 metros y andenes de 4 metros.
 - Ciudad de 240 × 222 metros: tres veces la superficie inicial, con barrios nuevos al oriente y al sur, dos calles y dos carreras adicionales y dos parques nuevos.
+- **Radar y minimapa urbano**: Brújula con puntos de interés cardinales y distancia en metros al cambuche (refugio), recicladora El Progreso, tienda La Esquinita, mesa de crafteo y rincón del dealer.
+- **Menú de pausa y ajustes (ESC / botón ⏸️)**: Permite reanudar, controlar volumen maestro con slider deslizable, silenciar (mute), guardar la partida manualmente, revisar estado y consultar la guía de controles.
+- **Audio con volumen graduable y persistente**: Guarda automáticamente tu volumen maestro y preferencia de silencio en el navegador.
+- **Clima dinámico bogotano**: Ciclo atmosférico entre nublado y llovizna suave sobre el centro de Bogotá con partículas optimizadas de Three.js.
+- **Inventario mejorado**: Información de efectos por objeto, validación de condiciones médicas al comer y consumo contextual (bebidas, comidas, curas).
 - Creación de personaje, inventario, reciclaje, comercio, talentos y construcción del cambuche.
 - Ciclo de día y noche y necesidades de supervivencia con un ritmo relajado. Un día del juego dura una hora real.
 - Panel de FPS actuales, mínimos, máximos, promedio y coordenadas X, Y, Z.
@@ -38,8 +41,8 @@ Necesitas Node.js 22.12 o posterior, npm, Git y Git LFS. Los archivos de audio s
 
 ```sh
 git lfs install
-git clone https://github.com/GrandaCoder/Vagabundo.git
-cd Vagabundo
+git clone https://github.com/juanagogo/bazuko.git
+cd bazuko
 git lfs pull
 npm ci
 npm run dev
@@ -58,9 +61,9 @@ En PowerShell, si una política de ejecución impide usar `npm`, ejecuta los mis
 | `W`, `A`, `S`, `D` | Moverse. En tercera persona, el movimiento sigue el rumbo de la cámara. |
 | `Shift` | Correr. |
 | `V` o botón de cámara | Alternar entre tercera persona e isométrica. |
-| Botón derecho + arrastrar o flechas | Girar la cámara en tercera persona. |
-| Rueda del ratón | Ajustar la distancia de la cámara en tercera persona. |
-| `E` | Interactuar con el objetivo cercano. |
+| Mover el ratón (o arrastrar botón izq/der) o flechas | Girar la cámara libremente en tercera persona (Pointer Lock con clic izquierdo). |
+| Rueda del ratón | Ajustar la distancia/zoom de la cámara en tercera persona. |
+| `E` | Interactuar con basura, tiendas, cambuche, autos o El Chato (perro callejero). |
 | Mantener y soltar `Q` junto a basura | Seleccionar materiales y recogerlos al soltar. |
 | `Q` junto al dealer | Abrir su tienda. |
 | `B` o `L` | Pedir limosna. |
@@ -69,17 +72,19 @@ En PowerShell, si una política de ejecución impide usar `npm`, ejecuta los mis
 | `C` | Abrir fabricación. |
 | `P` | Editar el personaje. |
 | `M` | Alternar entre el personaje realista y el modelo liviano. |
-| `Esc` | Cerrar paneles y menús que permitan salir. |
+| `N` | Alternar radar / minimapa urbano de Bogotá. |
+| `Esc` o botón ⏸️ | Menú de pausa y configuración / Cerrar paneles activos. |
 | Clic en comida o bebida del inventario | Consumir el objeto. |
 
 ## Cómo empezar
 
 1. Recorre los andenes y acércate a los objetos para ver las acciones disponibles.
-2. Recoge materiales y véndelos en la recicladora para conseguir dinero.
-3. Compra comida y agua y consúmelas desde el inventario.
-4. Construye y mejora el cambuche para poder descansar.
+2. Utiliza el radar (`N`) para orientarte hacia la recicladora o tu cambuche.
+3. Recoge materiales y véndelos en la recicladora para conseguir dinero.
+4. Compra comida y agua y consúmelas desde el inventario.
+5. Construye y mejora el cambuche para poder descansar.
 
-La partida guarda datos localmente en el navegador al crear o editar el personaje y al dormir. La preferencia de cámara también se conserva. Los datos dependen del navegador y de la dirección desde la que juegas; no hay sincronización entre dispositivos.
+La partida guarda datos localmente en el navegador al crear o editar el personaje, al dormir y desde el menú de pausa. La preferencia de cámara, volumen y radar también se conservan. Los datos dependen del navegador y de la dirección desde la que juegas; no hay sincronización entre dispositivos.
 
 Si la salud llega a cero, el juego se pausa y muestra una pantalla de recuperación. El regreso al cambuche ocurre al pulsar **Volver al cambuche**.
 
@@ -116,7 +121,13 @@ Para ejecutar las pruebas con el runner de Node.js:
 node --experimental-test-module-mocks --test tests/*.test.js
 ```
 
-Las 79 pruebas actuales cubren colisiones, cámaras, visibilidad de edificios, suelos, navegación de peatones, tráfico, bus, supervivencia, migración de partidas guardadas, ampliación de la ciudad, rendimiento y carga inicial. Las pruebas de arranque verifican que la partida espere modelos, shaders y GPU, que un fallo impida comenzar una partida incompleta y que la espera no contamine las estadísticas de FPS.
+Para ejecutar las pruebas E2E con Playwright:
+
+```sh
+npm run test:e2e
+```
+
+Las 87 pruebas unitarias cubren colisiones, cámaras, visibilidad de edificios, suelos, navegación de peatones, tráfico, bus, supervivencia, migración de partidas guardadas, ampliación de la ciudad, rendimiento, carga inicial, audio, clima dinámico, minimapa y menú de pausa. Las pruebas de arranque verifican que la partida espere modelos, shaders y GPU, que un fallo impida comenzar una partida incompleta y que la espera no contamine las estadísticas de FPS.
 
 ## Estructura
 
@@ -125,12 +136,12 @@ src/
   core/        Bucle del juego, renderizado, cámara y entrada
   entities/    Jugador y objetos interactivos
   systems/     Supervivencia, inventario, tráfico, guardado y colisiones
-  world/       Distrito, edificios, terreno y navegación
+  world/       Distrito, edificios, terreno, navegación y clima
   character/   Modelos y apariencia del personaje
-  ui/          Interfaz, menús y creador de personaje
+  ui/          Interfaz, minimapa, menú de pausa y creador de personaje
   data/        Objetos, talentos y construcción
 public/        Modelos y audio
-tests/         Pruebas automatizadas
+tests/         Pruebas automatizadas (unitarias y E2E)
 docs/images/   Capturas del juego
 ```
 

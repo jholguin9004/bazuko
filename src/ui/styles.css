@@ -1,15 +1,16 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-canvas { display: block; width: 100vw; height: 100vh; }
+#game-canvas { display: block; width: 100vw; height: 100vh; }
 
 #performance-panel {
   position: fixed; right: 12px; bottom: 48px; z-index: 20;
   max-width: calc(100vw - 24px); padding: 10px 12px;
-  color: #d9f9e6; background: rgba(9, 17, 21, .88);
+  color: #a3c9b8; background: rgba(9, 17, 21, 0.75); backdrop-filter: blur(4px); opacity: 0.6; transition: opacity 0.2s ease;
   border: 1px solid #54776a; border-radius: 6px;
   font: 12px/1.6 monospace; font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
+#performance-panel:hover { opacity: 1; pointer-events: auto; }
 #performance-panel pre { font: inherit; white-space: pre-wrap; }
 #performance-panel button {
   margin-top: 5px; padding: 3px 6px; cursor: pointer;
@@ -72,7 +73,7 @@ canvas { display: block; width: 100vw; height: 100vh; }
 
 /* === Inventario mini === */
 #inventory-panel {
-  position: fixed; top: 60px; right: 12px;
+  position: fixed; top: 200px; right: 12px;
   width: 180px; padding: 8px;
   background: rgba(0,0,0,0.6);
   border: 1px solid #333;
@@ -248,6 +249,13 @@ canvas { display: block; width: 100vw; height: 100vh; }
   max-width: calc(100vw - 220px); font: 12px monospace; color: #eee;
   pointer-events: none;
 }
+.controls-top-row { display: flex; gap: 6px; align-items: center; pointer-events: auto; }
+.icon-toggle-btn {
+  padding: 8px 10px; border: 1px solid #bba35b; border-radius: 5px;
+  background: rgba(18, 22, 24, 0.9); color: #ffe199; font: inherit;
+  cursor: pointer; pointer-events: auto;
+}
+.icon-toggle-btn:hover, .icon-toggle-btn:focus-visible { background: #3a3523; outline: 2px solid #ffe199; }
 #camera-toggle {
   padding: 8px 12px; border: 1px solid #bba35b; border-radius: 5px;
   background: rgba(18, 22, 24, 0.9); color: #ffe199; font: inherit;
@@ -353,3 +361,321 @@ body.is-loading #creator-modal { visibility: visible; }
 #loading-progress { width: 100%; height: 12px; accent-color: #edc55e; }
 .loading-hint { color: #afa99d; font-size: 14px; line-height: 1.6; }
 #loading-retry { padding: 10px 24px; cursor: pointer; }
+
+/* === Minimapa y Radar === */
+#minimap-container {
+  position: fixed; top: 12px; right: 12px;
+  width: 140px; padding: 5px;
+  background: rgba(10, 16, 20, 0.88);
+  border: 1px solid #54776a; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center;
+  z-index: 25; font-family: monospace;
+}
+#minimap-container.hidden { display: none; }
+.minimap-header {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 0 2px 4px 2px; border-bottom: 1px solid #233830;
+}
+.minimap-title { color: #d9f9e6; font-size: 11px; font-weight: bold; }
+.minimap-toggle-btn {
+  background: #1e332a; color: #ffe199; border: 1px solid #54776a;
+  border-radius: 3px; padding: 1px 5px; font-size: 10px; cursor: pointer;
+}
+.minimap-toggle-btn:hover { background: #2f4f41; }
+#minimap-canvas { width: 130px; height: 130px; max-width: 130px; max-height: 130px; display: block; border-radius: 50%; margin: 4px 0; box-shadow: 0 0 10px rgba(0, 0, 0, 0.4); }
+.minimap-info {
+  color: #eed688; font-size: 10px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+}
+
+/* === Menú de Pausa === */
+.pause-menu-body {
+  display: flex; flex-direction: column; gap: 14px;
+  font-family: monospace; color: #ddd; max-height: 65vh; overflow-y: auto; padding-right: 4px;
+}
+.pause-section {
+  background: rgba(0, 0, 0, 0.35); border: 1px solid #3d4a41;
+  border-radius: 5px; padding: 10px 12px;
+}
+.pause-section-title {
+  color: #eed688; font-size: 13px; margin-bottom: 8px; border-bottom: 1px solid #2d3b32; padding-bottom: 4px;
+}
+.pause-row {
+  display: flex; align-items: center; gap: 10px; font-size: 12px; flex-wrap: wrap;
+}
+.pause-slider {
+  flex: 1; min-width: 100px; accent-color: #27ae60; cursor: pointer;
+}
+.pause-vol-label {
+  min-width: 38px; color: #eed688; font-weight: bold;
+}
+.pause-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 12px; font-size: 12px;
+}
+.pause-grid strong { color: #aaa; }
+.pause-grid span { color: #fff; }
+.pause-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.pause-actions button {
+  padding: 6px 10px; font-size: 12px; border-radius: 4px;
+  background: #1c2b24; color: #d9f9e6; border: 1px solid #54776a; cursor: pointer;
+}
+.pause-actions button:hover { background: #2b4238; }
+.pause-details {
+  font-size: 11px; color: #aaa; cursor: pointer;
+}
+.pause-details summary {
+  color: #ffe199; font-weight: bold; margin-bottom: 6px;
+}
+.pause-controls-list {
+  list-style: none; padding-left: 4px; line-height: 1.8;
+}
+.pause-controls-list kbd {
+  background: #333; color: #ffd166; padding: 1px 5px; border-radius: 3px; border: 1px solid #555;
+}
+
+/* Radio Transistor Modal */
+.radio-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.radio-power-col, .radio-battery-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.radio-indicator-led {
+  font-size: 11px;
+  font-weight: bold;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.radio-indicator-led.is-on {
+  color: #2ecc71;
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+}
+.radio-battery-bar {
+  width: 90px;
+  height: 12px;
+  background: #111;
+  border: 1px solid #555;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.radio-battery-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.radio-battery-label {
+  font-size: 11px;
+  color: #eed688;
+}
+.radio-dial-scale {
+  position: relative;
+  background: #12100e;
+  border: 2px solid #5a452e;
+  border-radius: 6px;
+  padding: 8px 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+}
+.radio-dial-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: monospace;
+  font-size: 11px;
+  color: #e5b97c;
+  border-bottom: 1px solid #735939;
+  padding-bottom: 6px;
+}
+.radio-dial-needle {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: #ff3838;
+  box-shadow: 0 0 6px rgba(255, 56, 56, 0.9);
+  transition: left 0.15s ease-out;
+  border-radius: 1px;
+}
+.radio-freq-display {
+  font-family: monospace;
+  font-weight: bold;
+  color: #f1c40f;
+  background: #111;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #333;
+}
+.radio-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.radio-info-box {
+  background: rgba(20, 15, 10, 0.6);
+  border: 1px solid #735939;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.radio-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.radio-signal-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+.signal-full { background: #27ae60; color: #fff; }
+.signal-medium { background: #f39c12; color: #fff; }
+.signal-low { background: #d35400; color: #fff; }
+.signal-none { background: #7f8c8d; color: #fff; }
+.radio-info-program {
+  font-size: 12px;
+  color: #f1c40f;
+}
+.radio-info-genre {
+  font-size: 11px;
+  color: #bbb;
+}
+.radio-perks-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.radio-perk-icon {
+  font-size: 20px;
+}
+.radio-perk-text strong {
+  color: #2ecc71;
+}
+
+/* === HUD Popó y Proyectil === */
+#poop-hud-ammo {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  background: rgba(36, 20, 10, 0.88);
+  border: 1px solid #795548;
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: #d7ccc8;
+  font-family: monospace;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  pointer-events: none;
+  z-index: 10;
+  transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+}
+
+#poop-hud-ammo.ready {
+  border-color: #ffd166;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.4);
+}
+
+#poop-hud-ammo.empty {
+  opacity: 0.7;
+}
+
+/* === Abstinencia y Psicosis Visual === */
+#psychosis-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  overflow: hidden;
+}
+
+#psychosis-overlay.active {
+  opacity: 1;
+}
+
+.psychosis-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 38%, rgba(80, 0, 45, 0.45) 72%, rgba(25, 0, 15, 0.88) 100%);
+  animation: psychosis-pulse 2.2s infinite ease-in-out;
+  mix-blend-mode: multiply;
+}
+
+@keyframes psychosis-pulse {
+  0% { transform: scale(1); opacity: 0.65; }
+  50% { transform: scale(1.04); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+
+.psychosis-warning {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(45, 6, 22, 0.92);
+  border: 1px solid #e74c3c;
+  color: #ff6b81;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 6px 18px;
+  border-radius: 4px;
+  box-shadow: 0 0 18px rgba(231, 76, 60, 0.65);
+  display: none;
+  text-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
+  animation: blink-warning 0.8s infinite alternate;
+  z-index: 20;
+}
+
+@keyframes blink-warning {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+.hallucination-word {
+  position: absolute;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: clamp(14px, 3.2vw, 26px);
+  color: rgba(255, 65, 95, 0.9);
+  text-shadow: 0 0 10px rgba(255, 0, 40, 0.95), 2px 2px 0 #000;
+  pointer-events: none;
+  animation: float-whisper 3.4s forwards ease-out;
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+@keyframes float-whisper {
+  0% { opacity: 0; transform: scale(0.7) translateY(12px) rotate(-3deg); }
+  20% { opacity: 0.95; transform: scale(1.06) translateY(0) rotate(0deg); }
+  80% { opacity: 0.85; transform: scale(1) translateY(-14px) rotate(2deg); }
+  100% { opacity: 0; transform: scale(1.18) translateY(-32px) rotate(4deg); }
+}
+
+/* Indicador de barra de vicio en abstinencia crítica */
+.stat-bar[data-stat="vicio"].high-withdrawal .fill {
+  background: #e74c3c !important;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.8);
+  animation: pulse 0.5s infinite alternate;
+}
+

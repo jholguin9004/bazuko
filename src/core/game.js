@@ -15,6 +15,7 @@ import { Shop } from '../entities/Shop.js';
 import { Car } from '../entities/Car.js';
 import { DrugDealer } from '../entities/DrugDealer.js';
 import { CraftingStation } from '../entities/CraftingStation.js';
+import { Dog } from '../entities/Dog.js';
 
 import { StatsSystem, NEEDS } from '../systems/StatsSystem.js';
 import { TimeSystem } from '../systems/TimeSystem.js';
@@ -29,6 +30,11 @@ import { TalentSystem } from '../systems/TalentSystem.js';
 import { CraftingSystem } from '../systems/CraftingSystem.js';
 import { ZorraSystem } from '../systems/ZorraSystem.js';
 import { ZorraController } from '../systems/ZorraController.js';
+import { RadioSystem } from '../systems/RadioSystem.js';
+import { PoopSystem } from '../systems/PoopSystem.js';
+import { PsychosisSystem } from '../systems/PsychosisSystem.js';
+import { openRadioModal } from '../ui/RadioModal.js';
+
 
 import { HUD } from '../ui/HUD.js';
 import { PerformanceHUD } from '../ui/PerformanceHUD.js';
@@ -39,6 +45,9 @@ import { el, button } from '../ui/dom.js';
 import { Menu } from '../ui/Menu.js';
 import { createCreator } from '../ui/Creator.js';
 import { openRecycler, openShop, openCambuche } from '../ui/placeMenus.js';
+import { openPauseMenu } from '../ui/PauseMenu.js';
+import { Minimap } from '../ui/Minimap.js';
+import { WeatherSystem } from '../world/WeatherSystem.js';
 import { DEFAULT_LOOK, normalizeLook } from '../character/look.js';
 import { ITEMS, COSTAL_BONUS, isRecyclable } from '../data/items.js';
 import { SLEEP } from '../data/cambuche.js';
@@ -69,10 +78,19 @@ export class Game {
     this.diseases = new DiseaseSystem();
     this.talents = new TalentSystem();
     this.crafting = new CraftingSystem();
+    this.radio = new RadioSystem();
 
     // Mundo + jugador
     this.world = new World(this.sceneMgr.scene);
-this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
+    this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
+
+    // Sistemas de nuevas mecánicas: Popó y Psicosis por abstinencia
+    this.poopSystem = new PoopSystem(
+      this.sceneMgr.scene, this.audio, this.inventory, this.stats, this.world
+    );
+    this.psychosis = new PsychosisSystem(
+      this.sceneMgr.scene, this.player, this.stats, this.audio, this.world
+    );
     // Interacción
     this.interaction = new InteractionSystem(
       this.player, this.inventory, this.stats, this.audio,
@@ -87,7 +105,16 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     this.performanceHUD = new PerformanceHUD();
     this.localLights = new LocalLights(this.sceneMgr.scene);
     this.menu = new Menu();
+    this.minimap = new Minimap();
+    this.weather = new WeatherSystem(this.sceneMgr.scene);
     this.creator = createCreator({ audio: null });
+    try {
+      const savedQ = localStorage.getItem('bazuko.graphics_quality');
+      if (savedQ) {
+        this.renderer.setQuality(savedQ);
+        this.sceneMgr.setQuality(savedQ);
+      }
+    } catch { /* sin almacenamiento */ }
     this.cameraRig.canControl = () => !this.paused && !this.isSleeping &&
       !this.hud._talentOpen && !this.hud._craftOpen && !this.hud._dealerOpen;
     this.hud.setCameraMode(this.cameraRig.mode);
@@ -95,11 +122,20 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     window.addEventListener('open-recycler', () => openRecycler(this));
     window.addEventListener('open-shop', (e) => openShop(this, e.detail?.target));
     window.addEventListener('open-cambuche', () => openCambuche(this));
+    window.addEventListener('open-pause-menu', () => openPauseMenu(this));
+    window.addEventListener('open-radio-modal', () => openRadioModal(this));
+    window.addEventListener('audio-toggle', () => this.audio?.toggleMute());
     window.addEventListener('keydown', (e) => {
       if (e.repeat || e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (e.code === 'KeyV') this._toggleCamera();
       if (e.code === 'KeyP' && !this.paused && this.look) this.editLook();
       if (e.code === 'KeyM' && !this.paused) this._toggleModel();
+      if (e.code === 'KeyN' && !this.paused) this.minimap?.toggle();
+      if (e.code === 'KeyR' && !this.paused) openRadioModal(this);
+      if (e.code === 'Escape' && !e._panelHandled && !this.paused && !this.isSleeping) {
+        e._pauseMenuOpened = true;
+        openPauseMenu(this);
+      }
     });
 
     // Entidades
@@ -111,6 +147,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     this.traffic = null;
     this.dealer = null;
     this.craftingStation = null;
+    this.dog = null;
 
     // Estado
     this.look = null;       // apariencia + nombre + origen (creador)
@@ -205,6 +242,14 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
 
   /** Tecla P: cambiar apariencia en cualquier momento */
   async editLook() {
+    this.hud?.talentPanel?.classList.remove('open');
+    this.hud?.craftPanel?.classList.remove('open');
+    this.hud?.dealerPanel?.classList.remove('open');
+    if (this.hud) {
+      this.hud._talentOpen = false;
+      this.hud._craftOpen = false;
+      this.hud._dealerOpen = false;
+    }
     const look = await this.creator.open(this.look, { doneLabel: 'Guardar' });
     if (look) {
       await this._applyLook(look);
@@ -353,6 +398,10 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       )
     );
     this.interaction.register(this.craftingStation);
+    // ===== Compañero canino "El Chato" =====
+    this.dog = new Dog(this.sceneMgr.scene, new THREE.Vector3(26, 0, 32));
+    this.interaction.register(this.dog);
+
 
     // ===== Cambuche (refugio por piezas) =====
     const bedX = district.reserved?.bed.x ?? 16;
@@ -407,6 +456,14 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       this.cambuche?.setBuilt(this.built);
       this.zorra.deserialize(data.zorra);
       if (data.look) this._applyLook(data.look);
+      if (data.radio) {
+        if (typeof data.radio.freq === 'number') this.radio.setFrequency(data.radio.freq);
+        if (typeof data.radio.battery === 'number') this.radio.battery = data.radio.battery;
+      }
+      if (data.dog?.isFriend && this.dog) {
+        this.dog.befriend();
+      }
+
     }
   }
 
@@ -422,7 +479,9 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
       look: this.look,
       built: this.built,
       costal: this.costal,
-      zorra: this.zorra.serialize()
+      zorra: this.zorra.serialize(),
+      radio: this.radio ? { isOn: this.radio.isOn, freq: this.radio.frequency, battery: this.radio.battery } : null,
+      dog: { isFriend: !!this.dog?.isFriend }
     });
   }
 
@@ -536,6 +595,9 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     // Recuperar todas las necesidades evita seguir recibiendo daño al reaparecer.
     for (const need of NEEDS) this.stats[need] = Math.max(60, this.stats[need]);
     this.diseases.cureAll();
+    this.psychosis?.dispose?.();
+    this.poopSystem?.activeProjectiles?.forEach?.(p => p.dispose?.());
+    if (this.poopSystem) this.poopSystem.activeProjectiles = [];
 
     const district = this.world.active;
     if (district?.reserved) {
@@ -592,6 +654,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
 
     // 4. Stats
     this.stats.update(dt, this.player, this.diseases, this.clock, this.talents);
+    this.radio.update(dt, this.stats, this.dog);
     if (this._handleDeath()) return;
 
     // 4b. Aplicar bono de peso por talentos
@@ -611,17 +674,36 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     this.interaction.update(dt, this.input, this.clock);
     if (this._handleDeath()) return;
 
+    // 7b. Mecánica de popó y lanzamiento a peatones
+    if (this.input.consumePress('KeyX')) {
+      const hasPoop = this.inventory.count('popo') > 0;
+      if (hasPoop) {
+        this.poopSystem.throwPoop(this.player, this.cameraRig);
+      } else {
+        this.poopSystem.poop(this.player);
+      }
+    }
+    if (this.input.consumePress('KeyZ')) {
+      this.poopSystem.poop(this.player);
+    }
+    this.poopSystem.update(dt);
+
+    // 7c. Sistema de abstinencia, alucinaciones y psicosis inducida
+    this.psychosis.update(dt, this.cameraRig);
+
     // 8. Mundo
     // La visibilidad de edificios usa la cámara del mismo cuadro.
-    this.cameraRig.follow(this.player.position, dt, this.collisions);
+    this.cameraRig.follow(this.player.position, dt, this.collisions, this.player.speed, this.input.isRunning);
     this.world.update(dt, this.player.position, this.cameraRig.camera);
     this.traffic?.update(dt, { player: this.player.position, pedestrians: this.world.active?.npcs ?? [] });
+    this.weather?.update?.(dt, this.player.position, this.world.active);
 
     // 9. Entidades
     for (const p of this.pickups) p.update(dt);
     for (const c of this.cars) c.update(dt);
     this.cambuche?.update(dt);
     this.dealer?.update(dt);
+    this.dog?.update(dt, this.player.position, this.pickups);
 
     // 10. Audio
     const moving = this.input.axis.x !== 0 || this.input.axis.z !== 0;
@@ -632,6 +714,7 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     this._renderFrame(now, true);
 
     // 13. UI
+    this.minimap?.update?.(this.player.position, this.cameraRig?.yaw ?? 0, this._getPOIs(now), now);
     this.hud.update(
       this.stats, this.clock, this.interaction, this.inventory,
       this.diseases, this.talents, this.crafting, dt
@@ -651,6 +734,31 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     } else this.renderer.resolution.resetWindow();
   }
 
+  _getPOIs(now = performance.now()) {
+    if (this._lastPOIs && (now - (this._lastPOITime ?? 0) < 350)) {
+      if (this.dog?.isFriend && this._dogPOI) {
+        this._dogPOI.x = this.dog.position.x;
+        this._dogPOI.z = this.dog.position.z;
+      }
+      return this._lastPOIs;
+    }
+    this._lastPOITime = now;
+    const district = this.world?.active;
+    const reserved = district?.reserved;
+    if (!reserved) return [];
+
+    this._dogPOI = this.dog?.isFriend ? { name: 'El Chato', icon: '🐕', x: this.dog.position.x, z: this.dog.position.z, color: '#e67e22' } : null;
+    this._lastPOIs = [
+      { name: 'Cambuche', icon: '⛺', x: this.cambuche?.position?.x ?? this.cambuche?.group?.position?.x ?? reserved.bed.x, z: this.cambuche?.position?.z ?? this.cambuche?.group?.position?.z ?? reserved.bed.z, color: '#ffd166' },
+      { name: 'Recicladora', icon: '♻️', x: this.sellPoint?.position?.x ?? this.sellPoint?.group?.position?.x ?? reserved.sell.x, z: this.sellPoint?.position?.z ?? this.sellPoint?.group?.position?.z ?? reserved.sell.z, color: '#2ab7ca' },
+      { name: 'Tienda', icon: '🏪', x: this.shop?.position?.x ?? this.shop?.group?.position?.x ?? reserved.shop?.x ?? 34, z: this.shop?.position?.z ?? this.shop?.group?.position?.z ?? reserved.shop?.z ?? 29, color: '#2ecc71' },
+      { name: 'Crafteo', icon: '🔨', x: this.craftingStation?.position?.x ?? this.craftingStation?.group?.position?.x ?? reserved.craft?.x ?? 16.5, z: this.craftingStation?.position?.z ?? this.craftingStation?.group?.position?.z ?? reserved.craft?.z ?? 24.5, color: '#e67e22' },
+      { name: 'Dealer', icon: '💀', x: this.dealer?.position?.x ?? this.dealer?.group?.position?.x ?? reserved.dealer?.x ?? 56, z: this.dealer?.position?.z ?? this.dealer?.group?.position?.z ?? reserved.dealer?.z ?? 56, color: '#9b59b6' },
+      ...(this._dogPOI ? [this._dogPOI] : [])
+    ];
+    return this._lastPOIs;
+  }
+
   _registerRenderGroups() {
     const culling = this.renderer.culling, district = this.world.active;
     culling.clear();
@@ -661,5 +769,22 @@ this.player = new Player(this.sceneMgr.scene, this.input, this.stats);
     for (const { car } of this.traffic?.vehicles ?? []) culling.register(car.group, { dynamic: true, margin: .5 });
   }
 
-  stop() { this._running = false; }
+  setGraphicsQuality(level) {
+    this.renderer.setQuality(level);
+    this.sceneMgr.setQuality(level);
+    if (level === 'baja') {
+      this.world.active?.setWetness?.(0);
+    } else if (this.weather) {
+      this.world.active?.setWetness?.(this.weather.wetness);
+    }
+    window.dispatchEvent(new CustomEvent('toast', {
+      detail: { text: `⚡ Calidad gráfica cambiada a: ${level.toUpperCase()}`, type: 'info' }
+    }));
+  }
+
+  stop() {
+    this._running = false;
+    this.psychosis?.dispose?.();
+    this.poopSystem?.dispose?.();
+  }
 }

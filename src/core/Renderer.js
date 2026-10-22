@@ -16,11 +16,11 @@ export class Renderer {
     this.instance.setPixelRatio(this.resolution.ratio);
     this.instance.setSize(window.innerWidth, window.innerHeight);
     this.instance.shadowMap.enabled = true;
-    this.instance.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.instance.shadowMap.type = THREE.PCFShadowMap;
 
     // Look realista: tone mapping fílmico
     this.instance.toneMapping = THREE.ACESFilmicToneMapping;
-    this.instance.toneMappingExposure = 1.05;
+    this.instance.toneMappingExposure = 1.15;
     this.instance.outputColorSpace = THREE.SRGBColorSpace;
     this.silhouette = new PlayerSilhouette();
     this.culling = new FrustumCulling();
@@ -29,6 +29,23 @@ export class Renderer {
 
     window.addEventListener('resize', () => this._onResize());
     document.addEventListener('visibilitychange', () => this.resolution.resetWindow());
+  }
+
+  setQuality(level = 'alta') {
+    this.quality = level;
+    try { localStorage.setItem('bazuko.graphics_quality', level); } catch { /* sin almacenamiento */ }
+    if (level === 'baja') {
+      this.instance.shadowMap.enabled = false;
+      this.instance.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.0));
+    } else if (level === 'media') {
+      this.instance.shadowMap.enabled = true;
+      this.instance.shadowMap.type = THREE.PCFShadowMap;
+      this.instance.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    } else {
+      this.instance.shadowMap.enabled = true;
+      this.instance.shadowMap.type = THREE.PCFShadowMap;
+      this.instance.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    }
   }
 
   /** Mapa de entorno neutro: da reflejos (charcos, vidrios) y luz rebotada a los materiales PBR */

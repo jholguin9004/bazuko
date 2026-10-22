@@ -107,7 +107,9 @@ export const STAT_THRESHOLDS = {
   animoVelocidad:    30,    // ánimo < 30 → velocidad -20%
   animoVision:       50,    // ánimo < 50 → desaturación
   animoCritico:      10,    // ánimo < 10 → alucinaciones (futuro)
-  vicioAbstinencia:  20     // vicio < 20 → abstinencia: más lento y pierde salud
+  vicioAbstinencia:  20,    // vicio < 20 → abstinencia: más lento y pierde salud
+  abstinenciaAlta:   50,    // abstinencia >= 50% → alucinaciones visuales y paranoia
+  abstinenciaCritica: 80    // abstinencia >= 80% → psicosis inducida severa
 };
 
 // ===== Abstinencia =====
@@ -116,6 +118,12 @@ export const WITHDRAWAL = {
   velocidad:    0.85,       // multiplicador de velocidad
   animoMult:    1.5,        // el ánimo baja más rápido
   vicioDormir:  10          // dormir no calma el vicio: baja esto
+};
+
+export const WITHDRAWAL_THRESHOLDS = {
+  mild: 25,
+  high: 50,
+  critical: 80
 };
 
 // ===== Recuperación de stats =====

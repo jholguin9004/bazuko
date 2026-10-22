@@ -22,7 +22,7 @@ export class Menu {
       if (e.target === this.root) this.dismiss();
     });
     window.addEventListener('keydown', (e) => {
-      if (this.isOpen && e.code === 'Escape') this.dismiss();
+      if (this.isOpen && e.code === 'Escape' && !e._pauseMenuOpened) this.dismiss();
     }, true);
   }
 
@@ -33,6 +33,9 @@ export class Menu {
    * `render` se vuelve a llamar con refresh() después de cada compra/venta.
    */
   open({ title, sub = '', ic = 'box', render, onClose = null, dismissible = true }) {
+    if (typeof document !== 'undefined' && document.pointerLockElement) {
+      try { document.exitPointerLock(); } catch { /* sin pointer lock */ }
+    }
     this._dismissible = dismissible;
     $('menu-close').hidden = !dismissible;
     this._render = render;

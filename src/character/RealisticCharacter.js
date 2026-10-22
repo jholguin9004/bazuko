@@ -254,7 +254,15 @@ export async function createRealisticCharacter(look = {}, { lod = false } = {}) 
       const a = inst.actions;
       // destino: acción especial si existe el clip; si no, idle / caminar / correr según la velocidad
       let target = speed < 0.15 ? 'idle' : running && a.run ? 'run' : 'walk';
-      if (action && a[action] && speed < 0.15) target = action;
+      if (action && speed < 0.15) {
+        if (a[action]) target = action;
+        else if (action === 'cagar' && a.buscar) target = 'buscar';
+        else if (action === 'lanzar' && a.pedir) target = 'pedir';
+      }
+      if (inst?.root) {
+        const targetY = action === 'cagar' ? -0.3 : 0;
+        inst.root.position.y += (targetY - inst.root.position.y) * Math.min(1, dt * 10);
+      }
       if (!a[target]) target = 'idle';
       const k = Math.min(1, dt * 8);
       for (const key of Object.keys(a)) {

@@ -33,6 +33,25 @@ export class StatsSystem {
     return this.vicio < STAT_THRESHOLDS.vicioAbstinencia;
   }
 
+  /**
+   * Nivel de abstinencia (0 a 100).
+   * 0 si vicio >= 20. Conforme vicio baja de 20 a 0, abstinencia sube de 0 a 100.
+   */
+  get abstinencia() {
+    if (this.vicio >= STAT_THRESHOLDS.vicioAbstinencia) return 0;
+    return Math.round(((STAT_THRESHOLDS.vicioAbstinencia - this.vicio) / STAT_THRESHOLDS.vicioAbstinencia) * 100);
+  }
+
+  /** Abstinencia alta: genera alucinaciones y paranoia */
+  get isHighWithdrawal() {
+    return this.abstinencia >= (STAT_THRESHOLDS.abstinenciaAlta ?? 50);
+  }
+
+  /** Abstinencia crítica: genera psicosis inducida y problemas motores severos */
+  get isCriticalWithdrawal() {
+    return this.abstinencia >= (STAT_THRESHOLDS.abstinenciaCritica ?? 80);
+  }
+
   setDiseaseSystem(ds) {
     this.diseaseSystem = ds;
   }
@@ -63,10 +82,16 @@ export class StatsSystem {
 
     // Vicio: la ansiedad crece con el tiempo
     const wasWithdrawal = this.inWithdrawal;
+    const wasHighWithdrawal = this.isHighWithdrawal;
     this.vicio = Math.max(0, this.vicio - DECAY.vicio * dt);
     if (this.inWithdrawal !== wasWithdrawal) {
       window.dispatchEvent(new CustomEvent('withdrawal', {
-        detail: { active: this.inWithdrawal }
+        detail: { active: this.inWithdrawal, abstinencia: this.abstinencia }
+      }));
+    }
+    if (this.isHighWithdrawal !== wasHighWithdrawal) {
+      window.dispatchEvent(new CustomEvent('withdrawal-high', {
+        detail: { active: this.isHighWithdrawal, abstinencia: this.abstinencia }
       }));
     }
 
@@ -76,7 +101,11 @@ export class StatsSystem {
     if (this.hambre < 30) animoDecay *= 1.5;
     if (this.sed < 30)    animoDecay *= 1.5;
     if (this.energia < 30) animoDecay *= 1.3;
-    if (this.inWithdrawal) animoDecay *= WITHDRAWAL.animoMult;
+    if (this.inWithdrawal) {
+      animoDecay *= WITHDRAWAL.animoMult;
+      if (this.isCriticalWithdrawal) animoDecay *= 2.2;
+      else if (this.isHighWithdrawal) animoDecay *= 1.6;
+    }
     this.animo = Math.max(0, this.animo - animoDecay * mentalDecayMult * dt);
 
     // ===== Daño por stats críticos =====
@@ -138,7 +167,11 @@ export class StatsSystem {
     if (this.animo < STAT_THRESHOLDS.animoVelocidad) mult *= 0.8;
     if (this.animo === 0) mult *= 0.7; // crítico
     if (this.energia === 0) mult *= 0.5;
-    if (this.inWithdrawal) mult *= WITHDRAWAL.velocidad;
+    if (this.inWithdrawal) {
+      mult *= WITHDRAWAL.velocidad;
+      if (this.isCriticalWithdrawal) mult *= 0.75; // temblores y desorientación motora
+      else if (this.isHighWithdrawal) mult *= 0.88;
+    }
     return mult;
   }
 

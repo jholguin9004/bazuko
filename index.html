@@ -72,6 +72,16 @@
   <div id="inventory-panel"></div>
   <div id="disease-panel"></div>
   <div id="status" role="status" aria-live="polite" hidden></div>
+  <div id="poop-hud-ammo" class="empty">💩 [X] Hacer popó</div>
+
+  <!-- Capa de Alucinaciones y Psicosis por Abstinencia -->
+  <div id="psychosis-overlay" aria-hidden="true">
+    <div class="psychosis-vignette"></div>
+    <div class="psychosis-voices"></div>
+    <div class="psychosis-warning" id="psychosis-warning">
+      ⚠️ SÍNDROME DE ABSTINENCIA SEVERA · PSICOSIS INDUCIDA
+    </div>
+  </div>
 
   <!-- Panel de talentos -->
   <div id="talent-panel"></div>
@@ -84,11 +94,16 @@
 
   <!-- Controles -->
   <div id="camera-controls">
-    <button type="button" id="camera-toggle" aria-pressed="true">Tercera persona · V</button>
+    <div class="controls-top-row">
+      <button type="button" id="camera-toggle" aria-pressed="true">Tercera persona · V</button>
+      <button type="button" id="radio-toggle" class="icon-toggle-btn" title="Radio transistor (R)" aria-label="Radio transistor">📻</button>
+      <button type="button" id="audio-toggle" class="icon-toggle-btn" title="Silenciar / Activar sonido" aria-label="Silenciar sonido">🔊</button>
+      <button type="button" id="pause-toggle" class="icon-toggle-btn" title="Pausar juego (ESC)" aria-label="Menú de pausa">⏸️</button>
+    </div>
     <span id="camera-hint">Botón derecho + arrastrar o flechas: girar · Rueda: distancia</span>
   </div>
   <div id="controls-help">
-    WASD mover · Shift correr · V cámara · E interactuar · Q seleccionar/dealer · B pedir limosna · F boost · T talentos · C crafteo · P personaje · M modelo liviano
+    WASD mover · Shift correr · V cámara · N radar · R radio · E interactuar · Q seleccionar/dealer · B limosna · X popó/lanzar · Z defecar · F boost · T talentos · C crafteo · P personaje · M modelo liviano · ESC pausa
   </div>
 </div>
 

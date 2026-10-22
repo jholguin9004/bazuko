@@ -15,6 +15,10 @@ export const ITEMS = {
   moneda: { id: 'moneda', name: 'Moneda vieja',  weight: 0.02, value: 12000, rare: true },
   anillo: { id: 'anillo', name: 'Anillo',        weight: 0.05, value: 20000, rare: true },
 
+  // ===== RADIO Y PILAS =====
+  radioTransistor: { id: 'radioTransistor', name: 'Radio transistor AM/FM', weight: 0.6, value: 18000, usable: true },
+  pilas: { id: 'pilas', name: 'Pilas AA', weight: 0.1, value: 2000, usable: true },
+
   // ===== OBJETOS ROBADOS (AUTOS) =====
   retrovisor: { id: 'retrovisor', name: 'Retrovisor',   weight: 0.8, value: 15000 },
   radio:      { id: 'radio',      name: 'Radio auto',   weight: 1.5, value: 35000 },
@@ -103,20 +107,30 @@ export const ITEMS = {
   lona:    { id: 'lona',    name: 'Lona azul',     weight: 2,    value: 4000, build: true },
   madera:  { id: 'madera',  name: 'Tablas',        weight: 2,    value: 1500, build: true },
   colchon: { id: 'colchon', name: 'Colchón viejo', weight: 6,    value: 5000, build: true },
-  vela:    { id: 'vela',    name: 'Vela',          weight: 0.05, value: 500,  build: true }
+  vela:    { id: 'vela',    name: 'Vela',          weight: 0.05, value: 500,  build: true },
+
+  // ===== ARMAS / HERRAMIENTAS =====
+  popo: {
+    id: 'popo',
+    name: 'Mojón de popó',
+    weight: 0.3,
+    value: 50,
+    usable: true,
+    desc: 'Proyectil biológico artesanal. Presiona [X] para lanzárselo a los peatones.'
+  }
 };
 
 /** La recicladora compra todo lo que no se come, no cura, no es sustancia ni sirve para construir */
 export const isRecyclable = (item) =>
-  !!item && !item.consumable && !item.cure && !item.substance && !item.build;
+  !!item && !item.consumable && !item.cure && !item.substance && !item.build && item.id !== 'popo' && item.id !== 'radioTransistor' && item.id !== 'pilas';
 
 // Icono (lucide) para mostrar cada objeto en los menús
 const ICONS = {
   lata: 'recycle', botella: 'recycle', carton: 'package', chatarra: 'wrench', cable: 'flame',
-  reloj: 'watch', moneda: 'coins', anillo: 'sparkles', retrovisor: 'eye', radio: 'phone',
+  reloj: 'watch', moneda: 'coins', anillo: 'sparkles', retrovisor: 'eye', radio: 'phone', radioTransistor: 'radio', pilas: 'flame',
   pan: 'bread', lataComida: 'food', agua: 'water', refresco: 'water', cafe: 'coffee',
   vendaje: 'bandage', jabon: 'bath', cepillo: 'bath', cigarrillo: 'flame',
-  lona: 'tent', madera: 'layers', colchon: 'bed', vela: 'flame'
+  lona: 'tent', madera: 'layers', colchon: 'bed', vela: 'flame', popo: 'alert-triangle'
 };
 export const itemIcon = (id) => ICONS[id] ?? (ITEMS[id]?.cure ? 'pill' : 'box');
 
@@ -128,6 +142,7 @@ export const LOOT_COMMON = [
   { item: 'carton',     weight: 17 },
   { item: 'chatarra',   weight: 8 },
   { item: 'cable',      weight: 4 },
+  { item: 'pilas',      weight: 3 },
   { item: 'pan',        weight: 4 },
   { item: 'agua',       weight: 3 },
   { item: 'lataComida', weight: 2 },
@@ -171,6 +186,8 @@ export const SHOP_ITEMS = [
   { item: 'vela',       price: 1000, desc: 'Ilumina el cambuche: duermes más tranquilo.' },
   { item: 'lona',       price: 9000, desc: 'Para el techo del cambuche.' },
   { item: 'madera',     price: 6000, qty: 3, label: 'Tablas ×3', desc: 'Para las paredes del cambuche.' },
+  { item: 'pilas',           price: 2000,  desc: 'Pilas AA: recargan la radio transistor.' },
+  { item: 'radioTransistor', price: 18000, desc: 'Radio transistor: sintoniza emisoras y calma la mente.' },
   { upgrade: 'costal',  price: 12000, label: 'Costal grande', icon: 'backpack', desc: 'Cargas 20 kg más.' }
 ];
 

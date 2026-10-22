@@ -22,6 +22,13 @@ export class CameraRig {
     this._ray = new THREE.Ray();
     this._snap = true;
     this._drag = null;
+    this.baseFov = 55;
+    this.targetFov = 55;
+    this.roll = 0;
+    this._targetRoll = 0;
+    this._bobTime = 0;
+    this._bobAmount = 0;
+
 
     try {
       if (localStorage.getItem('bazuko.camera') === 'isometric') this.mode = 'isometric';
@@ -53,6 +60,7 @@ export class CameraRig {
   orbit(dx, dy) {
     this.yaw -= dx * 0.005;
     this.pitch = THREE.MathUtils.clamp(this.pitch + dy * 0.005, 0.05, 0.65);
+    this._targetRoll = THREE.MathUtils.clamp(-dx * 0.0004, -0.022, 0.022);
   }
 
   zoom(delta) {
@@ -60,8 +68,8 @@ export class CameraRig {
   }
 
   cancelDrag() {
-    if (this._drag && this.canvas.hasPointerCapture?.(this._drag.id)) {
-      this.canvas.releasePointerCapture(this._drag.id);
+    if (this._drag && this.canvas?.hasPointerCapture?.(this._drag.id)) {
+      try { this.canvas.releasePointerCapture(this._drag.id); } catch { /* sin captura */ }
     }
     this._drag = null;
   }
@@ -70,23 +78,61 @@ export class CameraRig {
     this.canvas = canvas;
     const active = () => this.mode === 'third-person' && (this.canControl?.() ?? true);
     canvas.addEventListener('contextmenu', (e) => { if (active()) e.preventDefault(); });
+
     canvas.addEventListener('pointerdown', (e) => {
-      if (e.button !== 2 || !active()) return;
+      if (!active()) return;
+      if (e.button !== 0 && e.button !== 2) return;
       e.preventDefault();
+
+      // En clic izquierdo solicita Pointer Lock para control fluido estilo juego 3D
+      if (e.button === 0 && (typeof document === 'undefined' || document.pointerLockElement !== canvas) && canvas.requestPointerLock) {
+        try { canvas.requestPointerLock(); } catch { /* sin permiso */ }
+      }
+
       this._drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
-      canvas.setPointerCapture(e.pointerId);
+      try { canvas.setPointerCapture?.(e.pointerId); } catch { /* sin captura */ }
     });
-    canvas.addEventListener('pointermove', (e) => {
-      if (!this._drag || this._drag.id !== e.pointerId) return;
-      if (!active()) { this.cancelDrag(); return; }
-      this.orbit(e.clientX - this._drag.x, e.clientY - this._drag.y);
-      this._drag.x = e.clientX;
-      this._drag.y = e.clientY;
-    });
-    canvas.addEventListener('pointerup', () => this.cancelDrag());
-    canvas.addEventListener('pointercancel', () => this.cancelDrag());
-    canvas.addEventListener('lostpointercapture', () => { this._drag = null; });
-    window.addEventListener('blur', () => this.cancelDrag());
+
+    const onPointerMove = (e) => {
+      if (!active()) {
+        if (this._drag) this.cancelDrag();
+        return;
+      }
+
+      // 1. Si el cursor está bloqueado en el juego, rotar con el movimiento del mouse
+      if (typeof document !== 'undefined' && document.pointerLockElement === canvas) {
+        const mx = e.movementX ?? 0;
+        const my = e.movementY ?? 0;
+        if (Math.abs(mx) < 300 && Math.abs(my) < 300 && (mx !== 0 || my !== 0)) {
+          this.orbit(mx, my);
+        }
+        return;
+      }
+
+      // 2. Arrastre con botón presionado (izquierdo o derecho)
+      if (this._drag && this._drag.id === e.pointerId) {
+        this.orbit(e.clientX - this._drag.x, e.clientY - this._drag.y);
+        this._drag.x = e.clientX;
+        this._drag.y = e.clientY;
+      }
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('mousemove', onPointerMove);
+
+    const onRelease = () => this.cancelDrag();
+    canvas.addEventListener('pointerup', onRelease);
+    canvas.addEventListener('pointercancel', onRelease);
+    canvas.addEventListener('lostpointercapture', onRelease);
+    window.addEventListener('blur', onRelease);
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('pointerlockchange', () => {
+        if (document.pointerLockElement !== canvas) {
+          this.cancelDrag();
+        }
+      });
+    }
+
     canvas.addEventListener('wheel', (e) => {
       if (!active()) return;
       e.preventDefault();
@@ -109,8 +155,28 @@ export class CameraRig {
     this.camera.updateMatrixWorld();
   }
 
-  follow(targetPos, dt = 1 / 60, collisions = null) {
+  follow(targetPos, dt = 1 / 60, collisions = null, speed = 0, isRunning = false) {
+    // 1. FOV dinámico al correr
+    if (this.mode === 'third-person' && dt > 0) {
+      const wantFov = (isRunning && speed > 2.5) ? 61 : this.baseFov;
+      if (Math.abs(this.camera.fov - wantFov) > 0.05) {
+        this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, wantFov, 1 - Math.exp(-6 * dt));
+        this.camera.updateProjectionMatrix();
+      }
+    } else if (this.camera.fov !== this.baseFov) {
+      this.camera.fov = this.baseFov;
+      this.camera.updateProjectionMatrix();
+    }
     this._look.copy(targetPos).add(this.lookOffset);
+    if (this.mode === 'third-person' && dt > 0 && speed > 0.4) {
+      this._bobTime += dt * (isRunning ? 13 : 8.5);
+      const targetBob = isRunning ? 0.038 : 0.018;
+      this._bobAmount = THREE.MathUtils.lerp(this._bobAmount, targetBob, 1 - Math.exp(-6 * dt));
+      this._look.y += Math.sin(this._bobTime) * this._bobAmount;
+    } else if (this._bobAmount > 0.001 && dt > 0) {
+      this._bobAmount = THREE.MathUtils.lerp(this._bobAmount, 0, 1 - Math.exp(-8 * dt));
+      this._look.y += Math.sin(this._bobTime) * this._bobAmount;
+    }
     if (this.mode === 'isometric') {
       this._desired.copy(targetPos).add(this.offset);
       if (this._snap) this.camera.position.copy(this._desired);
@@ -140,6 +206,11 @@ export class CameraRig {
     this._desired.copy(this._look);
     if (this.mode === 'third-person') this._desired.addScaledVector(this._direction, -1);
     this.camera.lookAt(this._desired);
+    if (this.mode === 'third-person' && dt > 0) {
+      this._targetRoll = THREE.MathUtils.lerp(this._targetRoll, 0, 1 - Math.exp(-7 * dt));
+      this.roll = THREE.MathUtils.lerp(this.roll, this._targetRoll, 1 - Math.exp(-12 * dt));
+      this.camera.rotation.z = this.roll;
+    }
     this.camera.updateMatrixWorld();
     this._snap = false;
   }

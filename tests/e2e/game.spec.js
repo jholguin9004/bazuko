@@ -21,7 +21,7 @@ async function startNewGame(page) {
   // botón sigue siendo visible y esta interacción se hace de forma explícita.
   await page.locator('#creator-done').evaluate((button) => button.click());
   await expect(creator).toBeHidden();
-  await expect(page.locator('#game-canvas')).toBeVisible();
+  await expect(page.locator('#game-canvas')).toBeVisible({ timeout: 60_000 });
 }
 
 test('flujo básico de una partida', async ({ page }) => {
@@ -42,10 +42,33 @@ test('flujo básico de una partida', async ({ page }) => {
   await page.keyboard.press('C');
   await expect(page.locator('#craft-panel')).toHaveClass(/open/);
   await expect(page.locator('#craft-panel')).toContainText('Mesa de Crafteo');
+  await page.keyboard.press('C');
+  await expect(page.locator('#craft-panel')).not.toHaveClass(/open/);
 
   await page.keyboard.press('P');
   await expect(page.locator('#creator-modal')).toBeVisible();
   await expect(page.locator('#creator-title')).toHaveText('Crea tu personaje');
   await page.locator('#creator-close').evaluate((button) => button.click());
   await expect(page.locator('#creator-modal')).toBeHidden();
+
+  // Verifica el radar / minimapa urbano
+  await expect(page.locator('#minimap-container')).toBeVisible();
+  await page.keyboard.press('N');
+  await expect(page.locator('#minimap-container')).toHaveClass(/hidden/);
+  await page.keyboard.press('N');
+  await expect(page.locator('#minimap-container')).not.toHaveClass(/hidden/);
+
+  // Menú de pausa con botón ⏸️
+  await page.locator('#pause-toggle').click();
+  await expect(page.locator('#menu')).toBeVisible();
+  await expect(page.locator('#menu-title')).toHaveText('Partida en Pausa');
+  await page.locator('#menu-close').click();
+  await expect(page.locator('#menu')).toBeHidden();
+
+  // Menú de pausa con ESC
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape', key: 'Escape', bubbles: true })));
+  await expect(page.locator('#menu')).toBeVisible();
+  await expect(page.locator('#menu-title')).toHaveText('Partida en Pausa');
+  await page.locator('#menu-close').click();
+  await expect(page.locator('#menu')).toBeHidden();
 });

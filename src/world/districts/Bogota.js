@@ -295,6 +295,7 @@ export class Bogota {
       }
     }
     mats.curb = new THREE.MeshStandardMaterial({ color: '#d8d4c8', roughness: 0.8 });
+    this.groundMaterials = mats;
     for (const [t, list] of Object.entries(quads)) {
       this.group.add(mergeByChunk(list, mats[t], { receiveShadow: true }));
     }
@@ -302,6 +303,24 @@ export class Bogota {
   }
 
   /** Cebras en los cruces, líneas amarillas y separadores de la troncal */
+
+  /** Ajusta el acabado del asfalto y andenes según la lluvia o humedad ambiental */
+  setWetness(amount = 0) {
+    if (!this.groundMaterials) return;
+    const wet = THREE.MathUtils.clamp(amount, 0, 1);
+    if (this.groundMaterials.road) {
+      this.groundMaterials.road.roughness = THREE.MathUtils.lerp(0.82, 0.42, wet);
+      this.groundMaterials.road.metalness = THREE.MathUtils.lerp(0.0, 0.18, wet);
+    }
+    if (this.groundMaterials.busway) {
+      this.groundMaterials.busway.roughness = THREE.MathUtils.lerp(1.0, 0.55, wet);
+      this.groundMaterials.busway.metalness = THREE.MathUtils.lerp(0.0, 0.12, wet);
+    }
+    if (this.groundMaterials.sidewalk) {
+      this.groundMaterials.sidewalk.roughness = THREE.MathUtils.lerp(0.75, 0.48, wet);
+    }
+  }
+
   _buildMarkings() {
     const white = [], yellow = [], curbs = [];
     const plane = (w, d, x, z) => { const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.translate(x, 0.015, z); return g; };

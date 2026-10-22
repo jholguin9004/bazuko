@@ -4,7 +4,7 @@ import {
   Thermometer, TriangleAlert, ShoppingBag, Hammer, Flame, Footprints, Trash2, Volume2, VolumeX, Save,
   Smartphone, Watch, GlassWater, Utensils, Heart, Smile, Bath, Layers, Box, Play, Check, Lock, Bandage,
   Banknote, Croissant, Wrench, Map, MapPin, Scissors, Shirt, User, Dices, RotateCcw, RotateCw, Sparkles,
-  Crown, Eye, IdCard, PersonStanding, Palette,
+  Crown, Eye, IdCard, PersonStanding, Palette, Radio,
 } from 'lucide';
 
 const ICONS = {
@@ -17,7 +17,7 @@ const ICONS = {
   heart: Heart, smile: Smile, bath: Bath, layers: Layers, box: Box, play: Play, check: Check,
   lock: Lock, bandage: Bandage, banknote: Banknote, bread: Croissant, wrench: Wrench, map: Map, pin: MapPin,
   scissors: Scissors, shirt: Shirt, user: User, dice: Dices, rotl: RotateCcw, rotr: RotateCw, sparkles: Sparkles,
-  crown: Crown, eye: Eye, idcard: IdCard, body: PersonStanding, palette: Palette,
+  crown: Crown, eye: Eye, idcard: IdCard, body: PersonStanding, palette: Palette, radio: Radio,
 };
 
 /** Devuelve un SVG de lucide con trazo uniforme. */

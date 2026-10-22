@@ -370,6 +370,24 @@ export function createCharacter(initial = DEFAULT_LOOK) {
       case 'comer':
         target.armRx = -1.5; target.elbR = -1.8;
         break;
+      case 'cagar':
+        target.lean = 0.55; target.headX = 0.3;
+        target.kneeL = 1.35; target.kneeR = 1.35; target.legL = -0.9; target.legR = -0.9;
+        target.armLx = -0.4; target.armRx = -0.4; target.elbL = -0.8; target.elbR = -0.8;
+        break;
+      case 'lanzar': {
+        const w = Math.sin(t * 12);
+        target.lean = -0.25; target.headX = -0.1;
+        target.armRx = -2.6 + w * 0.2; target.elbR = -0.3; target.armLx = 0.4;
+        break;
+      }
+      case 'temblor': {
+        const w = Math.sin(t * 36);
+        target.headX = w * 0.18; target.headY = Math.cos(t * 28) * 0.25;
+        target.armLx = -0.8 + w * 0.25; target.armRx = -0.8 - w * 0.25;
+        target.kneeL = Math.max(0, w * 0.15); target.kneeR = Math.max(0, -w * 0.15);
+        break;
+      }
       case 'saludo': {
         target.armRx = -2.7; target.armRz = -0.3 + Math.sin(t * 9) * 0.35; target.elbR = -0.4;
         break;
@@ -394,7 +412,7 @@ export function createCharacter(initial = DEFAULT_LOOK) {
     lR.hip.rotation.x = pose.legR;
     lL.knee.rotation.x = pose.kneeL;
     lR.knee.rotation.x = pose.kneeR;
-    hips.position.y = 0.52 + pose.bob - (action === 'buscar' ? 0.08 : 0);
+    hips.position.y = 0.52 + pose.bob - (action === 'buscar' ? 0.08 : (action === 'cagar' ? 0.28 : 0));
     body.rotation.x = -pose.lie * Math.PI / 2;
     body.position.y = pose.lie * 0.3;
     body.position.z = -pose.lie * 0.55;

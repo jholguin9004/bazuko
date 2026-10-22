@@ -123,3 +123,34 @@ test('reutilizar el vector de salida conserva el resultado y el deslizamiento de
     assert.deepEqual(position.toArray(), expected.toArray());
   }
 });
+
+test('permite arrastrar la cámara con botón izquierdo o derecho del ratón', () => {
+  const listeners = {};
+  const mockCanvas = {
+    addEventListener(event, fn) { listeners[event] = fn; },
+    setPointerCapture(id) { mockCanvas.captured = id; },
+    releasePointerCapture(id) { mockCanvas.captured = null; },
+    requestPointerLock() { mockCanvas.locked = true; }
+  };
+  const camera = new CameraRig(new THREE.Scene(), mockCanvas);
+
+  const initialYaw = camera.yaw;
+  // Clic izquierdo (0)
+  listeners.pointerdown({ button: 0, pointerId: 1, clientX: 100, clientY: 100, preventDefault() {} });
+  assert.equal(mockCanvas.captured, 1);
+  assert.equal(mockCanvas.locked, true);
+
+  // Arrastre
+  camera.orbit(20, 10);
+  assert.notEqual(camera.yaw, initialYaw);
+
+  // Liberación
+  listeners.pointerup();
+  assert.equal(camera._drag, null);
+
+  // Clic derecho (2)
+  listeners.pointerdown({ button: 2, pointerId: 2, clientX: 200, clientY: 200, preventDefault() {} });
+  assert.equal(mockCanvas.captured, 2);
+  camera.cancelDrag();
+  assert.equal(camera._drag, null);
+});

@@ -3,6 +3,19 @@
 
 export const RECIPES = [
   {
+    id: 'radioTransistor',
+    name: 'Radio transistor AM/FM',
+    emoji: '📻',
+    result: 'radioTransistor',
+    qty: 1,
+    ingredients: {
+      chatarra: 1,
+      cable: 2,
+      pilas: 1
+    }
+  },
+
+  {
     id: 'arma',
     name: 'Arma casera',
     emoji: '🗡️',

@@ -72,6 +72,11 @@ export class Npc {
     this.fullChar = null;  // completo (precargado; se muestra al acercarse)
     this._fullLoading = null;
     this.character = null; // el que se ve ahora
+    this.isSplatted = false;
+    this.splatTimer = 0;
+    this.fleeTimer = 0;
+    this.fleeDir = new THREE.Vector3();
+    this.splatMesh = null;
     this.ready = (async () => {
       this.look = opts.look ?? await randomStreetLook({ gastada: opts.gastada });
       this.lodChar = await createRealisticCharacter(this.look, { lod: true });
@@ -122,8 +127,85 @@ export class Npc {
     return null;
   }
 
+  hitByPoop(projectileOrigin = null) {
+    this.isSplatted = true;
+    this.splatTimer = 12;
+    this.fleeTimer = 8;
+    this.target = null;
+    this.route = [];
+
+    // Dirección de huida: alejarse del origen del lanzamiento
+    if (projectileOrigin) {
+      this.fleeDir.copy(this.position).sub(projectileOrigin);
+      this.fleeDir.y = 0;
+      if (this.fleeDir.lengthSq() < 0.001) this.fleeDir.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+      this.fleeDir.normalize();
+    } else {
+      const angle = Math.random() * Math.PI * 2;
+      this.fleeDir.set(Math.cos(angle), 0, Math.sin(angle));
+    }
+
+    // Marca visual de popó en el NPC
+    if (!this.splatMesh) {
+      const splatGeo = new THREE.SphereGeometry(0.14, 6, 6);
+      splatGeo.scale(1.2, 0.4, 0.9);
+      const splatMat = new THREE.MeshStandardMaterial({
+        color: 0x3d2008,
+        roughness: 0.95
+      });
+      this.splatMesh = new THREE.Mesh(splatGeo, splatMat);
+      this.splatMesh.position.set(0, 1.1, 0.18);
+      this.root.add(this.splatMesh);
+    }
+
+    // Gritos y quejas de los peatones en Bogotá
+    const screams = [
+      '¡¡AY QUÉ ASCO, ME CAYÓ UN MOJÓN!! 🤮',
+      '¡¡GONORREA COCHINO, ME TIRÓ POPÓ!! 🤬',
+      '¡¡POLICÍA, UN LOCO ME ESTÁ TIRANDO MIERDA!! 🚨',
+      '¡¡GAS, QUÉ COCHINADA TAN HIJUEPUTA!! 🤢',
+      '¡¡QUÉ PESTILENCIA, AUXILIO ME EMBARRARON!! 🤮',
+      '¡¡MALDITO ENFERMO, ME LAS VAS A PAGAR!! 🏃‍♂️💨'
+    ];
+    const msg = screams[Math.floor(Math.random() * screams.length)];
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('toast', { detail: { text: msg, type: 'warn' } }));
+      // 35% de probabilidad de soltar monedas del pánico
+      if (Math.random() < 0.35) {
+        const droppedMoney = 500 * (1 + Math.floor(Math.random() * 4));
+        window.dispatchEvent(new CustomEvent('npc-dropped-loot', {
+          detail: { position: this.position.clone(), amount: droppedMoney }
+        }));
+      }
+    }
+  }
+
   _walk(dt) {
     this.moving = false;
+
+    // Si fue impactado por popó: huye despavorido a gran velocidad
+    if (this.fleeTimer > 0) {
+      this.fleeTimer -= dt;
+      const speed = this.walkSpeed * 2.4;
+      const step = speed * dt;
+      const next = this._nextPosition.copy(this.position).addScaledVector(this.fleeDir, step);
+      if (this.isWalkable(next.x, next.z)) {
+        next.y = this.groundHeight(next.x, next.z);
+        this.position.copy(next);
+        this.moving = true;
+      } else {
+        // Esquiva paredes cambiando de rumbo
+        const oldX = this.fleeDir.x;
+        this.fleeDir.x = -this.fleeDir.z;
+        this.fleeDir.z = oldX;
+      }
+      let diff = Math.atan2(this.fleeDir.x, this.fleeDir.z) - this.root.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      this.root.rotation.y += diff * Math.min(1, dt * 10);
+      return;
+    }
+
     if (!this.navigation && this.wander <= 0) return;
     if (!this.target) {
       if ((this.wait -= dt) > 0) return;
@@ -175,6 +257,20 @@ export class Npc {
   update(dt, ctx = {}) {
     this._walk(dt);
     this.root.position.copy(this.position);
+
+    if (this.splatTimer > 0) {
+      this.splatTimer -= dt;
+      if (this.splatTimer <= 0) {
+        this.isSplatted = false;
+        if (this.splatMesh) {
+          this.root.remove(this.splatMesh);
+          this.splatMesh.geometry?.dispose?.();
+          this.splatMesh.material?.dispose?.();
+          this.splatMesh = null;
+        }
+      }
+    }
+
     if (!this.character) return;
 
     const dist = ctx.player ? Math.hypot(this.position.x - ctx.player.x, this.position.z - ctx.player.z) : 0;
@@ -195,6 +291,12 @@ export class Npc {
   }
 
   dispose() {
+    if (this.splatMesh) {
+      this.root.remove(this.splatMesh);
+      this.splatMesh.geometry?.dispose?.();
+      this.splatMesh.material?.dispose?.();
+      this.splatMesh = null;
+    }
     this.scene.remove(this.root);
   }
 }
