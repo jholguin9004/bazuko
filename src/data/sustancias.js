@@ -1,23 +1,13 @@
 // Datos ajustables de las sustancias y de la stat de traba.
 // Cada número lleva su unidad y el efecto que tiene en el juego.
 
-/** Perfil de cada sustancia: cuánta traba da, qué tan rápido pega y qué efectos pesan más */
+/** Perfil de cada sustancia que traba (el tintico no): cuánta traba da, qué tan rápido pega y qué efectos pesan más */
 export const PERFILES = {
-  tintico: {
-    traba: 10,            // puntos de traba que suma la dosis completa
-    subida: 2,            // s en liberar toda la traba
-    duracion: 60,         // s que dura la dosis antes del bajón
-    bajon: 'leve',        // clave en BAJONES
-    emoji: '☕',
-    velocidadSombra: 2.0, // m/s de las sombras que alucina
-    pesos: { velocidad: 0.4, euforia: 0.3, mareo: 0, sombras: 0, tesorosFalsos: 0 } // 0–1
-  },
   pegante: {
     traba: 25,
     subida: 5,
     duracion: 120,
     bajon: 'medio',
-    emoji: '🧴',
     velocidadSombra: 1.5,
     pesos: { velocidad: 0, euforia: 0.3, mareo: 1, sombras: 0.4, tesorosFalsos: 0.2 }
   },
@@ -26,7 +16,6 @@ export const PERFILES = {
     subida: 40,
     duracion: 240,
     bajon: 'fuerte',
-    emoji: '💊',
     velocidadSombra: 2.5,
     pesos: { velocidad: 0.2, euforia: 1, mareo: 0.3, sombras: 0.2, tesorosFalsos: 1 }
   },
@@ -35,11 +24,13 @@ export const PERFILES = {
     subida: 1,
     duracion: 45,
     bajon: 'brutal',
-    emoji: '🔥',
     velocidadSombra: 4.5,
     pesos: { velocidad: 1, euforia: 0.5, mareo: 0.2, sombras: 1, tesorosFalsos: 0.1 }
   }
 };
+
+/** Icono de cada sustancia del dealer (el tintico es café: tiene icono pero no perfil de traba) */
+export const ICONOS = { tintico: '☕', pegante: '🧴', pastilla: '💊', bazuco: '🔥' };
 
 /** Parámetros generales de la traba */
 export const TRABA = {

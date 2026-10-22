@@ -30,15 +30,15 @@ test('dominante: la dosis con más aporte reciente', () => {
   s.consumir('pastilla'); for (let i = 0; i < 10; i++) s.update(1, st);
   s.consumir('bazuco'); s.update(1, st);
   assert.equal(s.dominante(), 'bazuco');
-  const t = new TrabaSystem(); t.consumir('tintico'); t.consumir('pegante');
+  const t = new TrabaSystem(); t.consumir('pegante'); t.consumir('pastilla');
   for (let i = 0; i < 5; i++) t.update(1, st);
   assert.equal(t.dominante(), 'pegante');
 });
-test('velocidad: bazuco trabado ×1.25; tintico leve ×1.03; sobrio ×1', () => {
+test('velocidad: bazuco trabado ×1.25; pastilla leve ×1.015; sobrio ×1', () => {
   const s = new TrabaSystem(); s.consumir('bazuco'); s.update(1, stats());
   near(s.getSpeedMultiplier(), 1.25);
-  const t = new TrabaSystem(); t.consumir('tintico'); t.update(1, stats()); t.update(1, stats());
-  near(t.getSpeedMultiplier(), 1 + 0.25 * 0.4 * 0.3);
+  const t = new TrabaSystem(); t.consumir('pastilla'); t.update(1, stats());
+  near(t.getSpeedMultiplier(), 1 + 0.25 * 0.2 * 0.3);
   assert.equal(new TrabaSystem().getSpeedMultiplier(), 1);
 });
 test('mareo: 0 en leve; pegante muy trabado 0.5; zona roja 1', () => {
@@ -59,14 +59,19 @@ test('sombras y tesoros solo desde muy trabado', () => {
 });
 test('el bajón llega al terminar la dosis y resta su total', () => {
   const s = new TrabaSystem(), st = stats();
-  s.consumir('tintico'); for (let i = 0; i < 60; i++) s.update(1, st);
+  s.consumir('bazuco'); for (let i = 0; i < 45; i++) s.update(1, st);
   assert.equal(s.dosis.length, 0); assert.equal(s.bajones.length, 1);
-  const antes = { ...st };
-  for (let i = 0; i < BAJONES.leve.duracion; i++) s.update(1, st);
-  near(st.animo, antes.animo - BAJONES.leve.animo);
-  near(st.energia, antes.energia - BAJONES.leve.energia);
-  near(st.vicio, antes.vicio - DECAY.vicio * (BAJONES.leve.vicioMult - 1) * BAJONES.leve.duracion);
+  assert.equal(s.nivel, 'leve');
+  const antes = { ...st }, B = BAJONES.brutal;
+  for (let i = 0; i < B.duracion; i++) s.update(1, st);
+  near(st.animo, antes.animo - B.animo);
+  near(st.energia, antes.energia - B.energia);
+  near(st.vicio, antes.vicio - DECAY.vicio * (B.vicioMult - 1) * B.duracion);
   assert.equal(s.bajones.length, 0);
+});
+test('el tintico no suma traba', () => {
+  const s = new TrabaSystem();
+  assert.equal(s.consumir('tintico'), false); assert.equal(s.dosis.length, 0);
 });
 test('trabado: euforia sube el ánimo y frena hambre/energía', () => {
   const s = new TrabaSystem(), st = stats();
