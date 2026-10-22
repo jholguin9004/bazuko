@@ -3,6 +3,7 @@ import { TALENTS, BRANCHES } from '../data/talents.js';
 import { XP_PER_LEVEL, XP_CRAFT } from '../utils/constants.js';
 import { NEEDS } from '../systems/StatsSystem.js';
 import { cop } from '../utils/money.js';
+import { describirEfecto } from '../data/sustancias.js';
 
 export class HUD {
   constructor() {
@@ -431,9 +432,7 @@ export class HUD {
       const canAfford = (stats?.dinero ?? 0) >= p.value;
       const weightOk = inv ? (inv.totalWeight + p.weight <= inv.maxWeight) : true;
       const canBuy = canAfford && weightOk;
-      const effectDesc = p.id === 'tintico' ? `☕ +${p.amount} vicio, +${p.animo} ánimo, +${p.energia} energía`
-                       : p.id === 'pegante' ? `🧴 +${p.amount} vicio, +${p.animo} ánimo, ${p.salud} salud`
-                       : `💊 +${p.amount} vicio, +${p.animo} ánimo, ${p.salud} salud`;
+      const effectDesc = describirEfecto(p);
 
       return `
         <div class="dealer-product" data-id="${p.id}">

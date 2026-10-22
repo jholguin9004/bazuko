@@ -114,3 +114,19 @@ export const TEXTOS = {
     'Todo da vueltas. Si seguís, no la contás.'
   ]
 };
+
+const ETIQUETAS_EFECTO = [
+  ['animo', 'ánimo'], ['energia', 'energía'], ['salud', 'salud'],
+  ['hambre', 'hambre'], ['sed', 'sed'], ['higiene', 'higiene']
+];
+
+/** Texto de efecto de un ítem consumible: icono, vicio y cada stat presente con signo */
+export function describirEfecto(item) {
+  const partes = [`+${item.amount} vicio`];
+  for (const [campo, etiqueta] of ETIQUETAS_EFECTO) {
+    const v = item[campo];
+    if (v) partes.push(`${v > 0 ? '+' : ''}${v} ${etiqueta}`);
+  }
+  const icono = ICONOS[item.id];
+  return (icono ? `${icono} ` : '') + partes.join(', ');
+}

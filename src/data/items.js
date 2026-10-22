@@ -94,6 +94,10 @@ export const ITEMS = {
     id: 'pastilla', name: 'Pastilla', weight: 0.05, value: 8000,
     consumable: 'vicio', amount: 60, animo: 40, salud: -5, substance: true
   },
+  bazuco: {
+    id: 'bazuco', name: 'Bazuco', weight: 0.05, value: 800,
+    consumable: 'vicio', amount: 50, animo: 20, salud: -4, substance: true
+  },
   cigarrillo: {
     id: 'cigarrillo', name: 'Cigarrillo suelto', weight: 0.01, value: 300,
     consumable: 'vicio', amount: 35, salud: -1
@@ -147,7 +151,8 @@ export const LOOT_RARE = [
 export const LOOT_SUBSTANCE = [
   { item: 'tintico',  weight: 50 },
   { item: 'pegante',  weight: 30 },
-  { item: 'pastilla', weight: 20 }
+  { item: 'pastilla', weight: 20 },
+  { item: 'bazuco',   weight: 20 }
 ];
 
 // ===== TIENDA LA ESQUINITA (precios en COP) =====
