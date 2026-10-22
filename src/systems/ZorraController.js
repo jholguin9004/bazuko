@@ -12,6 +12,7 @@ import { movimientoJugador, haySobrepeso, objetosADescartar } from './ZorraSyste
 import {
   fuerzaJugador, crearForcejeo, pulsarForcejeo, avanzarForcejeo, cancelarForcejeo, botinForcejeo
 } from './Forcejeo.js';
+import { INTERACT_RANGE } from '../utils/constants.js';
 import { ForcejeoBar } from '../ui/ForcejeoBar.js';
 
 const toast = (text, type = 'info') =>
@@ -109,15 +110,29 @@ export class ZorraController {
     this.barra.mostrar(this.forcejeo.barra);
   }
 
-  _actualizarForcejeo(dt, input) {
+  _actualizarForcejeo(dt, input, pulsoG) {
     const f = this.forcejeo;
     // Se consumen todas las E para que InteractionSystem no las vea mientras dura
     if (input.consumePress(ZORRA.teclas.forcejear)) pulsarForcejeo(f);
-    if (input.consumePress(ZORRA.teclas.cancelar)) cancelarForcejeo(f);
+    if (pulsoG) cancelarForcejeo(f);
     avanzarForcejeo(f, dt);
     if (f.resultado === 'victoria') this._ganarForcejeo();
     else if (f.resultado === 'derrota') this._perderForcejeo();
     else this.barra.mostrar(f.barra);
+  }
+
+  /** Zorra interactuable más cercana (propia soltada o descuidada de un reciclador) dentro del alcance. */
+  _zorraAlcanzable() {
+    const pos = this.game.player.position;
+    let mejor = null;
+    let mejorDist = INTERACT_RANGE;
+    const candidatas = [this.zorraJugador, ...this.recicladores.map((r) => r.zorra)];
+    for (const z of candidatas) {
+      if (!z || z.interactable === false) continue;
+      const d = z.position.distanceTo(pos);
+      if (d < mejorDist) { mejorDist = d; mejor = z; }
+    }
+    return mejor;
   }
 
   _cerrarForcejeo() {
@@ -163,10 +178,16 @@ export class ZorraController {
 
     game._actualizarCapacidad(); // el paso 4b del juego corre después: evita un frame con capacidad vieja
 
-    if (this.forcejeo) this._actualizarForcejeo(dt, input);
-
-    if (!this.forcejeo && zorra.empujando && input.consumePress(ZORRA.teclas.soltar)) {
-      if (zorra.soltar(game.player.position.toArray(), game.player.root.rotation.y)) toast(TEXTOS_ZORRA.soltada);
+    // Una sola lectura de G por frame: una pulsación hace exactamente una cosa
+    const pulsoG = input.consumePress(ZORRA.teclas.soltar);
+    if (this.forcejeo) {
+      this._actualizarForcejeo(dt, input, pulsoG);
+    } else if (pulsoG) {
+      if (zorra.empujando) {
+        if (zorra.soltar(game.player.position.toArray(), game.player.root.rotation.y)) toast(TEXTOS_ZORRA.soltada);
+      } else {
+        this._zorraAlcanzable()?.interactuar();
+      }
     }
 
     if (vista) {

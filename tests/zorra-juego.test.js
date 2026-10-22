@@ -149,3 +149,95 @@ test('morir en pleno forcejeo lo cancela sin castigo y oculta la barra', () => {
   assert.equal(barra.oculta, true);
   assert.equal(game.stats.salud, 50);
 });
+
+// ---------- tecla G ----------
+
+const entradaCon = (...codes) => ({ axis: { x: 0, z: 0 }, consumePress: (c) => codes.includes(c) });
+
+function controlador({ rival = null } = {}) {
+  const game = Object.assign(juego(), {
+    stats: new StatsSystem(),
+    look: null,
+    player: { position: new THREE.Vector3(), root: new THREE.Group(), zorraMult: 1, canRun: true, load: 0 }
+  });
+  const zorraJugador = new Zorra(new THREE.Scene(), {
+    crearModelo: () => new THREE.Group(),
+    interactable: () => game.zorra.estado === 'dropped',
+    interactuar: () => { game.zorra.agarrar(); }
+  });
+  const barra = { mostrar() {}, ocultar() {} };
+  const ctl = Object.assign(Object.create(ZorraController.prototype), {
+    game, forcejeo: null, rival: null, barra, zorraJugador, recicladores: rival ? [rival] : [], _avisoSobrepeso: 0, _posSuelo: new THREE.Vector3()
+  });
+  return { ctl, game, zorraJugador };
+}
+
+test('G empujando suelta la zorra', () => {
+  const { ctl, game } = controlador();
+  game.zorra.obtener();
+  ctl.update(0.016, entradaCon('KeyG'));
+  assert.equal(game.zorra.estado, 'dropped');
+});
+
+test('G junto a la zorra propia soltada la agarra', () => {
+  const { ctl, game, zorraJugador } = controlador();
+  game.zorra.obtener(); game.zorra.soltar([0.5, 0, 0], 0);
+  zorraJugador.colocarDelante(new THREE.Vector3(0.5, 0, 0), 0);
+  ctl.update(0.016, entradaCon('KeyG'));
+  assert.equal(game.zorra.estado, 'pushing');
+});
+
+test('G lejos de la zorra soltada no hace nada', () => {
+  const { ctl, game, zorraJugador } = controlador();
+  game.zorra.obtener(); game.zorra.soltar([5, 0, 0], 0);
+  zorraJugador.colocarDelante(new THREE.Vector3(5, 0, 0), 0);
+  ctl.update(0.016, entradaCon('KeyG'));
+  assert.equal(game.zorra.estado, 'dropped');
+});
+
+test('E junto a la zorra soltada no hace nada', () => {
+  const { ctl, game, zorraJugador } = controlador();
+  game.zorra.obtener(); game.zorra.soltar([0.5, 0, 0], 0);
+  zorraJugador.colocarDelante(new THREE.Vector3(0.5, 0, 0), 0);
+  ctl.update(0.016, entradaCon('KeyE'));
+  assert.equal(game.zorra.estado, 'dropped');
+});
+
+test('G junto a la zorra desatendida de un reciclador se la lleva', () => {
+  let robos = 0;
+  const zorraRec = new Zorra(new THREE.Scene(), {
+    crearModelo: () => new THREE.Group(),
+    interactable: () => true,
+    interactuar: () => { robos++; }
+  });
+  zorraRec.colocarDelante(new THREE.Vector3(1, 0, 0), 0);
+  const { ctl, game } = controlador({ rival: { zorra: zorraRec } });
+  ctl.update(0.016, entradaCon('KeyG'));
+  assert.equal(robos, 1);
+  assert.equal(game.zorra.estado, 'none');
+});
+
+test('G durante el forcejeo se rinde, aplica el castigo y no suelta ni agarra en el mismo frame', () => {
+  const { ctl, game, rival } = forcejeoEnCurso();
+  game.stats.salud = 50; game.stats.animo = 50;
+  let tocada = 0;
+  ctl.zorraJugador = new Zorra(new THREE.Scene(), {
+    crearModelo: () => new THREE.Group(), interactable: () => true, interactuar: () => { tocada++; }
+  });
+  ctl.recicladores = [];
+  ctl.update(0.016, entradaCon('KeyG'));
+  assert.equal(game.stats.salud, 35);
+  assert.equal(game.stats.animo, 40);
+  assert.equal(ctl.forcejeo, null);
+  assert.equal(rival.estado.enojado, true);
+  assert.equal(tocada, 0);
+  assert.equal(game.zorra.estado, 'none');
+});
+
+test('Escape durante el forcejeo ya no lo cancela', () => {
+  const { ctl, game } = forcejeoEnCurso();
+  game.stats.salud = 50;
+  ctl.update(0.016, entradaCon('Escape'));
+  assert.ok(ctl.forcejeo);
+  assert.equal(game.stats.salud, 50);
+});

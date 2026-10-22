@@ -161,7 +161,6 @@ export class InteractionSystem {
           }
           this._stealCar(nearest);
           break;
-        case 'zorra':
         case 'reciclador':
           nearest.interactuar();
           break;

@@ -51,14 +51,23 @@ test('con zorraMult 0 el jugador no se mueve', () => {
   assert.equal(p.state, 'idle');
 });
 
-test('los objetivos no interactuables se ignoran y la zorra responde a E', () => {
+test('los objetivos no interactuables se ignoran; la zorra es el objetivo más cercano pero no responde a E', () => {
   const lejos = { harvest() {}, position: new THREE.Vector3(1.5, 0, 0) };
   const oculto = { kind: 'reciclador', interactable: false, position: new THREE.Vector3(0.2, 0, 0) };
   let usos = 0;
-  const zorra = { kind: 'zorra', interactable: true, prompt: '[E] Agarrar zorra', position: new THREE.Vector3(0.5, 0, 0), interactuar: () => usos++ };
+  const zorra = { kind: 'zorra', interactable: true, prompt: '[G] Agarrar zorra', position: new THREE.Vector3(0.5, 0, 0), interactuar: () => usos++ };
   const sys = interaccion([lejos, oculto, zorra]);
   sys.update(0.016, entradaE(), { isNight: false });
   assert.equal(sys.currentTargetType, 'zorra');
+  assert.equal(sys.currentTarget, zorra);
+  assert.equal(usos, 0);
+});
+
+test('el reciclador sigue respondiendo a E', () => {
+  let usos = 0;
+  const rec = { kind: 'reciclador', interactable: true, position: new THREE.Vector3(0.5, 0, 0), interactuar: () => usos++ };
+  const sys = interaccion([rec]);
+  sys.update(0.016, entradaE(), { isNight: false });
   assert.equal(usos, 1);
 });
 

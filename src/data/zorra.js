@@ -13,8 +13,10 @@ export const ZORRA = {
   },
   teclas: {
     soltar: 'KeyG',        // tecla para soltar la zorra
-    forcejear: 'KeyE',     // tecla para machacar durante el forcejeo
-    cancelar: 'Escape'     // tecla para rendirse
+    agarrar: 'KeyG',       // tecla para agarrar la zorra propia soltada
+    robar: 'KeyG',         // tecla para llevarse la zorra descuidada de un reciclador
+    forcejear: 'KeyE',     // tecla para iniciar y machacar el forcejeo
+    cancelar: 'KeyG'       // tecla para rendirse en el forcejeo
   }
 };
 
@@ -56,8 +58,8 @@ export const TEXTOS_ZORRA = {
   sobrepeso: 'Con tanto peso no das ni un paso',
   muerte: 'Te desmayaste y te desocuparon la zorra',
   yaTienes: 'Ya tienes zorra',
-  agarrar: '[E] Agarrar zorra',
-  robar: '[E] Llevarse la zorra',
+  agarrar: '[G] Agarrar zorra',
+  robar: '[G] Llevarse la zorra',
   forcejear: '[E] Forcejear por la zorra',
   enojado: 'Este reciclador no quiere más forcejeos',
   nombreCompra: 'Zorra de reciclador',
@@ -68,7 +70,7 @@ export const TEXTOS_ZORRA = {
   robada: 'Te llevaste la zorra',
   ganaste: 'Le ganaste la zorra al reciclador',
   perdiste: 'El reciclador te sacó a empujones',
-  ayudaForcejeo: 'Machaca [E] · [Esc] para rendirte'
+  ayudaForcejeo: 'Machaca [E] · [G] para rendirte'
 };
 
 export const INSULTOS_RECICLADOR = [
