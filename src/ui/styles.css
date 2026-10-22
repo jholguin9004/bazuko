@@ -316,7 +316,7 @@ canvas { display: block; width: 100vw; height: 100vh; }
 
 /* === Items consumibles en inventario === */
 .inv-row.usable {
-  cursor: pointer;
+  cursor: pointer; pointer-events: auto;
   transition: background 0.15s, color 0.15s;
 }
 .inv-row.usable:hover {
